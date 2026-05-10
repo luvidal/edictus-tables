@@ -1,7 +1,7 @@
 /**
  * BalanceTable — One card per company:
  *   - Header: company name + RUT (left), Del/al dates (right)
- *   - Table: column headers + two data rows (100% company, X% participation)
+ *   - Table: column headers + two data rows (Empresa 100%, Participación X%)
  */
 
 import React from 'react'
@@ -163,7 +163,7 @@ const BalanceTable = ({
                                     {COL_HEADERS.map((col, i) => (
                                         <th
                                             key={i}
-                                            className={`${T.headerCell} ${T.th} ${i < COL_HEADERS.length - 1 ? T.vline : ''} ${i === 0 ? 'text-left w-14' : 'text-right'}`}
+                                            className={`${T.headerCell} ${T.th} ${i < COL_HEADERS.length - 1 ? T.vline : ''} ${i === 0 ? 'text-left w-28' : 'text-right'}`}
                                         >
                                             {col.label}
                                         </th>
@@ -174,7 +174,7 @@ const BalanceTable = ({
                                 {/* Row 1: Company totals (100%) — editable */}
                                 <tr className={T.rowHover}>
                                     <td className={`${T.cellEdit} ${T.vline} text-center`}>
-                                        <span className="text-xs tabular-nums text-ink-primary">100%</span>
+                                        <span className="text-xs tabular-nums text-ink-primary">Empresa 100%</span>
                                     </td>
                                     {CURRENCY_KEYS.map(key => {
                                         const val = row[key] as number | null
@@ -205,13 +205,16 @@ const BalanceTable = ({
                                 {/* Row 2: Proportional share — computed */}
                                 <tr className={T.rowBorder}>
                                     <td className={`${T.cellEdit} ${T.vline} text-center`}>
-                                        <EditableField
-                                            value={participacion}
-                                            onChange={(v) => handleChange(rowIdx, 'participacion', v)}
-                                            type="percent"
-                                            symbol="%"
-                                            originClass={getCellOriginClass?.(row.id, 'participacion')}
-                                        />
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            <span className="text-xs text-ink-tertiary">Participación</span>
+                                            <EditableField
+                                                value={participacion}
+                                                onChange={(v) => handleChange(rowIdx, 'participacion', v)}
+                                                type="percent"
+                                                symbol="%"
+                                                originClass={getCellOriginClass?.(row.id, 'participacion')}
+                                            />
+                                        </div>
                                     </td>
                                     {CURRENCY_KEYS.map(key => {
                                         const val = row[key] as number | null

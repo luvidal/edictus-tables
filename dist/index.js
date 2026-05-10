@@ -3187,14 +3187,14 @@ var BalanceTable = ({
         /* @__PURE__ */ jsxRuntime.jsx("thead", { children: /* @__PURE__ */ jsxRuntime.jsx("tr", { children: COL_HEADERS.map((col, i) => /* @__PURE__ */ jsxRuntime.jsx(
           "th",
           {
-            className: `${T.headerCell} ${T.th} ${i < COL_HEADERS.length - 1 ? T.vline : ""} ${i === 0 ? "text-left w-14" : "text-right"}`,
+            className: `${T.headerCell} ${T.th} ${i < COL_HEADERS.length - 1 ? T.vline : ""} ${i === 0 ? "text-left w-28" : "text-right"}`,
             children: col.label
           },
           i
         )) }) }),
         /* @__PURE__ */ jsxRuntime.jsxs("tbody", { children: [
           /* @__PURE__ */ jsxRuntime.jsxs("tr", { className: T.rowHover, children: [
-            /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${T.vline} text-center`, children: /* @__PURE__ */ jsxRuntime.jsx("span", { className: "text-xs tabular-nums text-ink-primary", children: "100%" }) }),
+            /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${T.vline} text-center`, children: /* @__PURE__ */ jsxRuntime.jsx("span", { className: "text-xs tabular-nums text-ink-primary", children: "Empresa 100%" }) }),
             CURRENCY_KEYS.map((key) => {
               const val = row[key];
               const colIdx = currencyColIndex(key);
@@ -3222,16 +3222,19 @@ var BalanceTable = ({
             })
           ] }),
           /* @__PURE__ */ jsxRuntime.jsxs("tr", { className: T.rowBorder, children: [
-            /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${T.vline} text-center`, children: /* @__PURE__ */ jsxRuntime.jsx(
-              EditableField,
-              {
-                value: participacion,
-                onChange: (v) => handleChange(rowIdx, "participacion", v),
-                type: "percent",
-                symbol: "%",
-                originClass: getCellOriginClass?.(row.id, "participacion")
-              }
-            ) }),
+            /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${T.vline} text-center`, children: /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "flex items-center justify-center gap-1.5", children: [
+              /* @__PURE__ */ jsxRuntime.jsx("span", { className: "text-xs text-ink-tertiary", children: "Participaci\xF3n" }),
+              /* @__PURE__ */ jsxRuntime.jsx(
+                EditableField,
+                {
+                  value: participacion,
+                  onChange: (v) => handleChange(rowIdx, "participacion", v),
+                  type: "percent",
+                  symbol: "%",
+                  originClass: getCellOriginClass?.(row.id, "participacion")
+                }
+              )
+            ] }) }),
             CURRENCY_KEYS.map((key) => {
               const val = row[key];
               const propVal = val != null && participacion > 0 ? Math.round(val * participacion / 100) : null;

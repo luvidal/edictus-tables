@@ -174,3 +174,4 @@ These were copied from jogi during extraction. They are now owned by this packag
 - **Keyboard**: Arrow keys navigate cells, Enter edits, Tab moves right, Escape clears focus
 - **Totals**: Header shows per-month totals. Multi-section tables show subtotal rows per section
 - **Empty side**: Always renders with add-row input visible, never hidden
+- **BalanceTable**: Filled rows label full-company totals as `Empresa 100%` and the editable ownership row as `Participación <x>%`; the `100%` label is not editable.

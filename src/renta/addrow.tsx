@@ -38,7 +38,7 @@ const AddRow = ({
                     placeholder={section.placeholder}
                     value={labelValue}
                     onChange={(e) => onLabelChange(e.target.value)}
-                    className={`w-full ${T.input} text-ink-tertiary placeholder-ink-tertiary/50`}
+                    className={`w-full ${T.inputPlaceholder}`}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && labelValue.trim()) {
                             onAddRow(labelValue)

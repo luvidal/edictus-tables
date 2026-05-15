@@ -55,17 +55,17 @@ export const T = {
     footerValue: 'font-bold',
 
     // ── Inputs (transparent inline) ──
-    input: 'bg-transparent border-none outline-none text-xs truncate',
-    inputLabel: 'bg-transparent border-none outline-none text-xs font-medium truncate',
-    inputPlaceholder: 'bg-transparent border-none outline-none text-xs text-ink-tertiary placeholder-ink-tertiary/60 truncate',
-    rowLabel: 'bg-transparent border-none outline-none text-xs font-medium text-ink-secondary truncate',
+    input: 'bg-transparent border-none outline-none text-xs truncate text-ink-primary placeholder-ink-tertiary/35',
+    inputLabel: 'bg-transparent border-none outline-none text-xs font-medium truncate text-ink-primary placeholder-ink-tertiary/35',
+    inputPlaceholder: 'bg-transparent border-none outline-none text-xs text-ink-secondary placeholder-ink-tertiary/35 truncate',
+    rowLabel: 'bg-transparent border-none outline-none text-xs font-medium text-ink-primary truncate',
 
     // ── Typography helpers ──
     sectionTitle: 'font-normal text-xs',
     /** Data row indent (child rows below subheaders) */
     cellIndent: 'pl-6',
     muted: 'text-xs text-ink-secondary',
-    empty: 'text-xs text-ink-tertiary italic',
+    empty: 'text-xs text-ink-tertiary/60 italic',
     cardLabel: 'text-xs font-medium',
     cardValue: 'text-xs font-semibold',
 

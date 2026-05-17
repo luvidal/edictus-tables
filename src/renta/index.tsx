@@ -283,11 +283,7 @@ const RentaTable = ({
     const toggleVariable = useCallback((rowId: string) => {
         onRowsChange(rows.map(r => {
             if (r.id !== rowId) return r
-            // First click on undefined commits the visible state (RF) before the
-            // user can toggle to RV; otherwise the pill appears "frozen" because
-            // !undefined → true skips RF entirely on the very first click.
-            const next = r.isVariable === undefined ? false : !r.isVariable
-            return { ...r, isVariable: next }
+            return { ...r, isVariable: !r.isVariable }
         }))
     }, [rows, onRowsChange])
 

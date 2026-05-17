@@ -1654,8 +1654,7 @@ var RentaTable = ({
   const toggleVariable = useCallback((rowId) => {
     onRowsChange(rows.map((r) => {
       if (r.id !== rowId) return r;
-      const next = r.isVariable === void 0 ? false : !r.isVariable;
-      return { ...r, isVariable: next };
+      return { ...r, isVariable: !r.isVariable };
     }));
   }, [rows, onRowsChange]);
   const toggleNaturaleza = useCallback((rowId) => {

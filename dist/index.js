@@ -384,7 +384,7 @@ var EditableCell = ({
     setEditValue(initialValue ?? value?.toString() ?? "");
     setIsEditing(true);
   };
-  React3.useEffect(() => {
+  React3.useLayoutEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       if (editValue.length <= 1) {
@@ -459,7 +459,7 @@ var EditableCell = ({
   const alignClass = align === "left" ? "text-left justify-start" : align === "center" ? "text-center justify-center" : "text-right justify-end";
   const inputAlignClass = align === "left" ? "text-left" : align === "center" ? "text-center" : "text-right";
   const Wrapper = asDiv ? "div" : "td";
-  React3.useEffect(() => {
+  React3.useLayoutEffect(() => {
     if (useRegistry) {
       if (editRequestForMe && !isEditing) {
         startEdit(editRequestForMe.initialValue ?? void 0);
@@ -2470,12 +2470,12 @@ function EditableField({
     setEditValue(initialValue ?? value?.toString() ?? "");
     setIsEditing(true);
   };
-  React3.useEffect(() => {
+  React3.useLayoutEffect(() => {
     if (editRequestForMe && !isEditing) {
       startEdit(editRequestForMe.initialValue ?? void 0);
     }
   }, [editRequestForMe?.n]);
-  React3.useEffect(() => {
+  React3.useLayoutEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       if (editValue.length <= 1) {

@@ -1,7 +1,7 @@
 // EditableCell — inlined from jogi's components/forms/editablecell.tsx
 // Replaced @/ imports with local package imports
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { Eye } from 'lucide-react'
 import { T } from './styles'
 import { useIsMobile } from './usemobile'
@@ -129,7 +129,15 @@ const EditableCell = ({
         setIsEditing(true)
     }
 
-    useEffect(() => {
+    // useLayoutEffect (not useEffect) so DOM focus moves to the input
+    // SYNCHRONOUSLY after commit, before paint. With plain useEffect, focus is
+    // scheduled as a passive callback after paint — leaving a window where the
+    // input is mounted but document.activeElement is still the wrapper. Any
+    // keystroke arriving in that window goes to the wrapper, gets caught by
+    // handleContainerKeyDown, and is silently dropped (the cell is already
+    // editing so the new editRequest's startEdit branch short-circuits).
+    // Symptom: "I typed 123456 but only 1 was captured."
+    useLayoutEffect(() => {
         if (isEditing && inputRef.current) {
             inputRef.current.focus()
             // For type-to-edit, place cursor at end; otherwise select all
@@ -247,7 +255,15 @@ const EditableCell = ({
     // Trigger edit externally (keyboard Enter/F2 or type-to-edit).
     // Registry path: react to a cell-scoped `editRequest` whose target matches
     // this (rowId, cellKey). Legacy path: the per-cell `requestEdit` counter.
-    useEffect(() => {
+    //
+    // useLayoutEffect so the chain (editRequest → startEdit → setEditValue/
+    // setIsEditing → input mounts → input.focus()) finishes BEFORE paint and
+    // before any subsequent user keystroke. With plain useEffect, the user can
+    // type a second key while the input is in the DOM but the wrapper still
+    // owns focus — that key lands on the wrapper, the container handler sets a
+    // new editRequest with the dropped char as initialValue, and the next
+    // effect runs with the LATEST n (skipping every key in between).
+    useLayoutEffect(() => {
         if (useRegistry) {
             if (editRequestForMe && !isEditing) {
                 startEdit(editRequestForMe.initialValue ?? undefined)

@@ -13,7 +13,7 @@
  *   MonthPill:     <EditableField value={8} onChange={...} symbol="m" displayValue="$4.5M" defaultValue={12} />    → [8 m] $4.5M
  */
 
-import { useState, useRef, useEffect, type ReactNode } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, type ReactNode } from 'react'
 import type { GridKeyboard } from './usegridkeyboard'
 
 interface EditableFieldProps {
@@ -103,14 +103,17 @@ export default function EditableField({
         setIsEditing(true)
     }
 
-    useEffect(() => {
+    // useLayoutEffect so the editRequest → startEdit → input mount → focus
+    // chain completes before paint. See EditableCell for the dropped-keystroke
+    // failure mode this prevents.
+    useLayoutEffect(() => {
         if (editRequestForMe && !isEditing) {
             startEdit(editRequestForMe.initialValue ?? undefined)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editRequestForMe?.n])
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (isEditing && inputRef.current) {
             inputRef.current.focus()
             // Type-to-edit puts a single char into the input — cursor at end.

@@ -1,4 +1,4 @@
-import React3, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React3, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { Eye, Trash2, ChevronUp, ChevronDown, Undo2, Info, ChevronRight, GripVertical, Ungroup, Check, X, FoldVertical } from 'lucide-react';
 import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
 import { createPortal } from 'react-dom';
@@ -376,7 +376,7 @@ var EditableCell = ({
     setEditValue(initialValue ?? value?.toString() ?? "");
     setIsEditing(true);
   };
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       if (editValue.length <= 1) {
@@ -451,7 +451,7 @@ var EditableCell = ({
   const alignClass = align === "left" ? "text-left justify-start" : align === "center" ? "text-center justify-center" : "text-right justify-end";
   const inputAlignClass = align === "left" ? "text-left" : align === "center" ? "text-center" : "text-right";
   const Wrapper = asDiv ? "div" : "td";
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (useRegistry) {
       if (editRequestForMe && !isEditing) {
         startEdit(editRequestForMe.initialValue ?? void 0);
@@ -2462,12 +2462,12 @@ function EditableField({
     setEditValue(initialValue ?? value?.toString() ?? "");
     setIsEditing(true);
   };
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (editRequestForMe && !isEditing) {
       startEdit(editRequestForMe.initialValue ?? void 0);
     }
   }, [editRequestForMe?.n]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       if (editValue.length <= 1) {

@@ -613,6 +613,34 @@ describe('GridTextInput — Enter blurs by default', () => {
 })
 
 // ============================================================================
+// (p) Type-to-edit transfers DOM focus to the input synchronously
+// ============================================================================
+
+describe('useGridKeyboard — type-to-edit focus transfer is synchronous', () => {
+    it('after type-to-edit on a focused wrapper, document.activeElement is the input (not the wrapper)', () => {
+        // Regression: focus was set in a plain useEffect → ran after paint → the
+        // window between input mount and focus() let subsequent keystrokes land
+        // on the wrapper, where the container handler silently consumed them.
+        // Switching to useLayoutEffect closes the window. This test verifies
+        // focus has transferred by the time the type-to-edit event handler
+        // returns control.
+        const rows: DebtRow[] = [{ id: 'r1', entidad: 'A', tipo: 'X', deuda_total: null, vigente: null }]
+        const { container } = render(<DebtsHarness initialRows={rows} />)
+        const tds = Array.from(container.querySelectorAll('td[tabindex="0"]')) as HTMLElement[]
+        const vWrap = tds[0]
+        act(() => vWrap.focus())
+        expect((document.activeElement as HTMLElement)?.tagName).toBe('TD')
+        // Type "1" — should mount input and transfer focus to it synchronously.
+        act(() => { fireEvent.keyDown(vWrap, { key: '1' }) })
+        const input = vWrap.querySelector('input') as HTMLInputElement
+        expect(input).toBeTruthy()
+        expect(input.value).toBe('1')
+        // CRITICAL: focus must be on the input now, not the wrapper.
+        expect(document.activeElement).toBe(input)
+    })
+})
+
+// ============================================================================
 // (o) Cell-scoped edit/clear requests — tabbing into a sibling does not clobber it
 // ============================================================================
 

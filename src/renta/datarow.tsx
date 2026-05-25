@@ -1,10 +1,18 @@
 import React from 'react'
 import { Eye } from 'lucide-react'
 import EditableCell from '../common/editablecell'
+import GridTextInput from '../common/gridtextinput'
 import { T } from '../common/styles'
 import RowToolbar from '../common/rowtoolbar'
 import { isSubtractType } from './helpers'
+import type { GridKeyboard } from '../common/usegridkeyboard'
 import type { RowData, Month } from './types'
+
+/**
+ * Sentinel cellKey for the label column. Shared with `AddRow` so arrow up/down
+ * lines up the label inputs across data and add rows.
+ */
+export const LABEL_CELL_KEY = '__label__'
 
 type NaturalezaType = 'Imponible' | 'No imponible' | 'Legal' | 'Otro' | undefined
 
@@ -41,18 +49,8 @@ interface DataRowProps {
     onLabelChange: (label: string) => void
     onValueChange: (monthId: string, value: number | null) => void
     onViewSource?: (fileIds: string[]) => void
-    /** Keyboard nav: check if a cell is focused */
-    isCellFocused?: (monthIndex: number) => boolean
-    /** Keyboard nav: set focus on a cell */
-    onCellFocus?: (monthIndex: number) => void
-    /** Keyboard nav: navigate after edit commit */
-    onNavigate?: (direction: 'up' | 'down' | 'left' | 'right') => void
-    /** Keyboard nav: counter that triggers edit on focused cell */
-    editTrigger?: number
-    /** Keyboard nav: counter that triggers clear on focused cell */
-    clearTrigger?: number
-    /** Keyboard nav: initial value for type-to-edit */
-    editInitialValue?: string | null
+    /** Grid keyboard binding — the row registers its label + month cells. */
+    keyboard?: GridKeyboard
     /** Variable column */
     showVariableColumn?: boolean
     onToggleVariable?: () => void
@@ -91,12 +89,7 @@ const DataRow = ({
     onLabelChange,
     onValueChange,
     onViewSource,
-    isCellFocused,
-    onCellFocus,
-    onNavigate,
-    editTrigger = 0,
-    clearTrigger = 0,
-    editInitialValue,
+    keyboard,
     showVariableColumn = false,
     onToggleVariable,
     showClassificationColumns = false,
@@ -152,16 +145,28 @@ const DataRow = ({
                     onDelete={onRemove}
                 />
                 <div className={`flex items-center gap-0.5 min-w-0 ${indented ? 'pl-4' : ''}`}>
-                    <input
-                        type="text"
-                        value={row.label}
-                        onChange={(e) => onLabelChange(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                        }}
-                        className={`flex-1 min-w-0 ${T.rowLabel}`}
-                        title={row.label}
-                    />
+                    {keyboard ? (
+                        <GridTextInput
+                            keyboard={keyboard}
+                            rowId={row.id}
+                            cellKey={LABEL_CELL_KEY}
+                            value={row.label}
+                            onChange={onLabelChange}
+                            className={`flex-1 min-w-0 ${T.rowLabel}`}
+                            title={row.label}
+                        />
+                    ) : (
+                        <input
+                            type="text"
+                            value={row.label}
+                            onChange={(e) => onLabelChange(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                            }}
+                            className={`flex-1 min-w-0 ${T.rowLabel}`}
+                            title={row.label}
+                        />
+                    )}
                     {row.sourceFileId && onViewSource && (
                         <button
                             onClick={() => onViewSource([row.sourceFileId!])}
@@ -205,7 +210,6 @@ const DataRow = ({
                 )
             })()}
             {months.map((p, mi) => {
-                const cellFocused = isCellFocused?.(mi) ?? false
                 const vline = mi < months.length - 1 ? T.vline : ''
                 return (
                     <EditableCell
@@ -218,12 +222,9 @@ const DataRow = ({
                         type="currency"
                         originClass={getCellOriginClass?.(p.id)}
                         onViewSource={p.sourceFileId && onViewSource ? () => onViewSource([p.sourceFileId!]) : undefined}
-                        focused={cellFocused}
-                        onCellFocus={onCellFocus ? () => onCellFocus(mi) : undefined}
-                        onNavigate={onNavigate}
-                        requestEdit={cellFocused ? editTrigger : 0}
-                        requestClear={cellFocused ? clearTrigger : 0}
-                        editInitialValue={cellFocused ? editInitialValue : undefined}
+                        keyboard={keyboard}
+                        rowId={row.id}
+                        cellKey={p.id}
                     />
                 )
             })}

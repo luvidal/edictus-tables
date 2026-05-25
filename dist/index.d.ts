@@ -398,6 +398,28 @@ declare const BalanceTable: ({ rows, onRowsChange, colorScheme: colorSchemeProp,
 type CellOrigin = 'ai' | 'user' | 'calculated';
 declare const ORIGIN_CLASSES: Record<CellOrigin, string>;
 
+interface GridFocusedCell {
+    rowId: string;
+    cellKey: string;
+}
+interface GridStop {
+    rowId: string;
+    cellKey: string;
+    ref: React.RefObject<HTMLElement | null>;
+}
+interface GridKeyboard {
+    focusedCell: GridFocusedCell | null;
+    editTrigger: number;
+    clearTrigger: number;
+    editInitialValue: string | null;
+    isFocused: (rowId: string, cellKey: string) => boolean;
+    focus: (rowId: string, cellKey: string) => void;
+    clearFocus: () => void;
+    navigate: (direction: 'up' | 'down' | 'left' | 'right') => void;
+    register: (stop: GridStop) => () => void;
+    handleContainerKeyDown: (e: React.KeyboardEvent) => void;
+}
+
 interface EditableCellProps {
     value: number | string | null | undefined;
     onChange: (value: number | string | null) => void;
@@ -411,20 +433,31 @@ interface EditableCellProps {
     onViewSource?: () => void;
     /** Render as div instead of td (for non-table contexts) */
     asDiv?: boolean;
-    /** Show focus ring (keyboard navigation) */
+    /**
+     * @deprecated Pass `keyboard`/`rowId`/`cellKey` instead — the registry path
+     * derives focus from the `useGridKeyboard` hook. Slated for removal in the
+     * next major. Zero call sites in jogi/main as of 2026-05-25.
+     */
     focused?: boolean;
-    /** Called when cell is clicked (for focus tracking) */
+    /** @deprecated See `focused`. Use registry-path keyboard binding. */
     onCellFocus?: () => void;
-    /** Called after edit commit to navigate to next cell (Tab→right, Enter→down) */
+    /** @deprecated See `focused`. Use registry-path keyboard binding. */
     onNavigate?: (direction: 'up' | 'down' | 'left' | 'right') => void;
-    /** Increment to trigger edit externally (keyboard Enter/F2 on focused cell) */
+    /** @deprecated See `focused`. Use registry-path keyboard binding. */
     requestEdit?: number;
-    /** Increment to clear the cell value (keyboard Delete/Backspace on focused cell) */
+    /** @deprecated See `focused`. Use registry-path keyboard binding. */
     requestClear?: number;
-    /** Initial value for type-to-edit (the character pressed to start editing) */
+    /** @deprecated See `focused`. Use registry-path keyboard binding. */
     editInitialValue?: string | null;
     /** Text color class based on cell origin (ai/user/calculated). Overrides default text-ink-primary. */
     originClass?: string;
+    /** Registry-path keyboard binding. When `keyboard`, `rowId`, and `cellKey` are all
+     *  supplied, this cell registers a tab stop and reads focus/edit/clear state from
+     *  the keyboard. The legacy per-cell focus/onNavigate/requestEdit props are then
+     *  ignored. Tab routes through `keyboard.navigate(...)`. */
+    keyboard?: GridKeyboard;
+    rowId?: string;
+    cellKey?: string;
 }
 /**
  * EditableCell - An inline-editable table cell
@@ -435,7 +468,7 @@ interface EditableCellProps {
  * within a fixed-height container so clicking to edit does NOT scramble/shift
  * the table layout.
  */
-declare const EditableCell: ({ value, onChange, type, isDeduction, hasData, className, align, placeholder, onViewSource, asDiv, focused, onCellFocus, onNavigate, requestEdit, requestClear, editInitialValue, originClass, }: EditableCellProps) => react_jsx_runtime.JSX.Element;
+declare const EditableCell: ({ value, onChange, type, isDeduction, hasData, className, align, placeholder, onViewSource, asDiv, focused, onCellFocus, onNavigate, requestEdit, requestClear, editInitialValue, originClass, keyboard, rowId, cellKey, }: EditableCellProps) => react_jsx_runtime.JSX.Element;
 
 interface EditableFieldProps {
     /** Current value of the editable field */
@@ -459,8 +492,14 @@ interface EditableFieldProps {
     width?: string;
     /** Extra Tailwind classes */
     className?: string;
+    /** Registry-path keyboard binding. When `keyboard`, `rowId`, and `cellKey` are
+     *  all supplied, the outer wrapper registers a tab stop and Tab routes through
+     *  `keyboard.navigate(...)`. Without it, Tab is handled natively. */
+    keyboard?: GridKeyboard;
+    rowId?: string;
+    cellKey?: string;
 }
-declare function EditableField({ value, onChange, displayValue, defaultValue, type, min, max, symbol, originClass, width, className, }: EditableFieldProps): react_jsx_runtime.JSX.Element;
+declare function EditableField({ value, onChange, displayValue, defaultValue, type, min, max, symbol, originClass, width, className, keyboard, rowId, cellKey, }: EditableFieldProps): react_jsx_runtime.JSX.Element;
 
 interface DeleteDialogProps {
     count: number;

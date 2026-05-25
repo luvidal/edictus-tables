@@ -15,7 +15,8 @@ Shared components, hooks, and utilities used across all table components. Everyt
 | `viewsourcebutton.tsx` | `ViewSourceButton` — row-level eye icon for source file viewing |
 | `userowhover.ts` | `useRowHover()` — hover state tracking for table rows (accepts string or number IDs) |
 | `usefieldupdate.ts` | `useFieldUpdate()` — generic row field update + remove logic |
-| `usegridkeyboard.ts` | `useGridKeyboard()` — grid keyboard navigation (arrow keys, Tab, Enter, Escape) for EditableCell grids |
+| `usegridkeyboard.ts` | `useGridKeyboard()` — registry-based grid keyboard navigation. Cells call `register({ rowId, cellKey, ref })` on mount; arrow keys, Tab, Enter, Escape route through the registry, and `navigate(direction)` moves DOM focus by calling `ref.current.focus()` on the destination |
+| `gridtextinput.tsx` | `GridTextInput` — plain text input that registers a tab stop. Used for label and text columns so Tab walks through them alongside numeric `EditableCell` stops |
 | `usemobile.ts` | `useIsMobile()` media query hook (max-width: 639px) |
 | `usesoftdelete.ts` | `useSoftDelete()` — generic soft-delete hook with confirm/cancel/restore state management |
 | `softdeletetypes.ts` | `SoftDeletable` type — `{ deletedAt?: string; deletionReason?: string }` mixin for row types |
@@ -35,6 +36,7 @@ import TableShell, { SourceIcon } from '../common/tableshell'
 import { useRowHover } from '../common/userowhover'
 import { useFieldUpdate } from '../common/usefieldupdate'
 import { useGridKeyboard } from '../common/usegridkeyboard'
+import GridTextInput from '../common/gridtextinput'
 import { useSoftDelete } from '../common/usesoftdelete'
 import DeleteDialog from '../common/deletedialog'
 import RecycleBin from '../common/recyclebin'
@@ -118,7 +120,7 @@ const MyTable = ({
 8. **Use `ViewSourceButton`** — for row-level source file viewing. Returns null when no source/handler.
 9. **Use `useRowHover()`** — for row hover state. Returns `getHoverProps(id)` (spread on `<tr>`) and `isHovered(id)`.
 10. **Use `useFieldUpdate()`** — for generic row update/remove. Returns `updateField(id, field, value)` and `removeRow(id)`.
-11. **Use `useGridKeyboard()`** — for keyboard navigation between EditableCell instances.
+11. **Use `useGridKeyboard()`** — for keyboard navigation. Pass `{ visibleRowIds }`. Cells register tab stops by passing `keyboard`, `rowId`, and `cellKey` (e.g., to `EditableCell` / `EditableField`) or by rendering `GridTextInput` for label and text columns. Tab routes through `keyboard.navigate(...)` and moves `document.activeElement` to the destination ref.
 12. **`renderAfterContent`** — use this for content that sits after the `<table>` (e.g., RentaTable's recycle bin and dialogs).
 13. **Export from `index.tsx`** — add your component + types to the root `src/index.tsx`.
 14. **Add a README** — create `src/mytable/README.md` documenting features, dependencies, and props.

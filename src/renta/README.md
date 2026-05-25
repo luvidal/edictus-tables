@@ -8,7 +8,7 @@ Editable monthly spreadsheet with CRUD, grouping, drag-reorder, keyboard navigat
 - **Row types**: `add`/`income` (add to total), `subtract`/`deduction`/`debt` (subtract from total)
 - **Grouping**: Select 2+ rows of same type family, group into collapsible header. Auto-ungroups when <2 children remain
 - **Drag reorder**: Rows reorder within their type family. Groups drag as a unit. 600ms hover on collapsed group auto-expands
-- **Keyboard**: Arrow keys navigate cells, Enter edits, Tab moves right, Escape clears focus
+- **Keyboard**: Arrow keys navigate cells, Enter edits, Tab walks every typing cell in the row — including label inputs — via the per-row registry in `useGridKeyboard`. At each section's last data row, Tab walks into that section's add-row label, then onto the next section. Escape clears focus.
 - **Totals**: Header shows per-month totals. Multi-section tables show subtotal rows per section
 - **Soft-delete**: Rows go to recycle bin (common `RecycleBin` with `renderCells` for monthly values) with reason. Can be restored
 - **Selection**: Checkbox per row, Cmd/Ctrl+click anywhere on row to toggle selection, right-click context menu for bulk actions
@@ -24,7 +24,7 @@ Editable monthly spreadsheet with CRUD, grouping, drag-reorder, keyboard navigat
 | `addrow.tsx` | "Add new row" input row per section |
 | `grouprow.tsx` | Collapsible group header row (computed sums) |
 | `floatingaction.tsx` | `HeaderSelectionBar` + `ContextMenu` (right-click on selected rows) |
-| `usekeyboard.ts` | Grid keyboard navigation hook |
+| `usekeyboard.ts` | Thin pass-through to `useGridKeyboard` (registry-based focus) |
 | `usedragreorder.ts` | HTML5 drag-and-drop reorder hook |
 
 ## Dependencies

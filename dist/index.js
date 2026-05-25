@@ -356,14 +356,30 @@ var EditableCell = ({
   requestEdit = 0,
   requestClear = 0,
   editInitialValue,
-  originClass
+  originClass,
+  keyboard,
+  rowId,
+  cellKey
 }) => {
   const isMobile = useIsMobile();
   const [isEditing, setIsEditing] = React3.useState(false);
   const [editValue, setEditValue] = React3.useState("");
   const [isHovered, setIsHovered] = React3.useState(false);
   const inputRef = React3.useRef(null);
+  const wrapperRef = React3.useRef(null);
+  const committingRef = React3.useRef(false);
+  const useRegistry = !!(keyboard && rowId && cellKey);
+  const register = keyboard?.register;
+  React3.useEffect(() => {
+    if (!useRegistry || !register) return;
+    return register({ rowId, cellKey, ref: wrapperRef });
+  }, [useRegistry, register, rowId, cellKey]);
+  const cellFocused = useRegistry ? keyboard.isFocused(rowId, cellKey) : focused;
+  const effectiveEditTrigger = useRegistry ? cellFocused ? keyboard.editTrigger : 0 : requestEdit;
+  const effectiveClearTrigger = useRegistry ? cellFocused ? keyboard.clearTrigger : 0 : requestClear;
+  const effectiveEditInitialValue = useRegistry ? cellFocused ? keyboard.editInitialValue : void 0 : editInitialValue;
   const startEdit = (initialValue) => {
+    committingRef.current = false;
     setEditValue(initialValue ?? value?.toString() ?? "");
     setIsEditing(true);
   };
@@ -379,6 +395,9 @@ var EditableCell = ({
     }
   }, [isEditing]);
   const commitEdit = () => {
+    if (committingRef.current) return;
+    committingRef.current = true;
+    const inputStillFocused = document.activeElement === inputRef.current;
     setIsEditing(false);
     let newValue = editValue;
     if (type === "number") {
@@ -395,20 +414,31 @@ var EditableCell = ({
     if (newValue != value) {
       onChange(newValue);
     }
+    if (useRegistry && inputStillFocused) {
+      wrapperRef.current?.focus();
+    }
   };
   const cancelEdit = () => {
+    committingRef.current = true;
     setIsEditing(false);
     setEditValue("");
   };
+  const goNavigate = (direction) => {
+    if (useRegistry) keyboard.navigate(direction);
+    else onNavigate?.(direction);
+  };
+  const hasNavTarget = useRegistry || !!onNavigate;
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       commitEdit();
-      onNavigate?.("down");
+      goNavigate("down");
     } else if (e.key === "Tab") {
-      e.preventDefault();
-      commitEdit();
-      onNavigate?.(e.shiftKey ? "left" : "right");
+      if (hasNavTarget) {
+        e.preventDefault();
+        commitEdit();
+        goNavigate(e.shiftKey ? "left" : "right");
+      }
     } else if (e.key === "Escape") {
       cancelEdit();
     }
@@ -429,33 +459,38 @@ var EditableCell = ({
   const inputAlignClass = align === "left" ? "text-left" : align === "center" ? "text-center" : "text-right";
   const Wrapper = asDiv ? "div" : "td";
   React3.useEffect(() => {
-    if (requestEdit > 0 && !isEditing) {
-      startEdit(editInitialValue ?? void 0);
+    if (effectiveEditTrigger > 0 && !isEditing) {
+      startEdit(effectiveEditInitialValue ?? void 0);
     }
-  }, [requestEdit]);
+  }, [effectiveEditTrigger]);
   React3.useEffect(() => {
-    if (requestClear > 0) {
+    if (effectiveClearTrigger > 0) {
       onChange(null);
     }
-  }, [requestClear]);
+  }, [effectiveClearTrigger]);
   const handleClick = () => {
     if (!isEditing) {
-      onCellFocus?.();
+      if (useRegistry) keyboard.focus(rowId, cellKey);
+      else onCellFocus?.();
     }
   };
   const handleDoubleClick = () => {
     if (!isEditing) {
-      onCellFocus?.();
+      if (useRegistry) keyboard.focus(rowId, cellKey);
+      else onCellFocus?.();
       startEdit();
     }
   };
-  const focusRing = focused && !isEditing ? "ring-2 ring-brand ring-inset" : "";
+  const focusRing = cellFocused && !isEditing ? "ring-2 ring-brand ring-inset" : "";
   return /* @__PURE__ */ jsxRuntime.jsx(
     Wrapper,
     {
-      className: `${T.cellEdit} cursor-pointer ${focusRing} ${className}`,
+      ref: useRegistry ? wrapperRef : void 0,
+      tabIndex: useRegistry ? 0 : void 0,
+      className: `${T.cellEdit} cursor-pointer ${focusRing} ${useRegistry ? "outline-none" : ""} ${className}`,
       onClick: handleClick,
       onDoubleClick: handleDoubleClick,
+      onFocus: useRegistry ? () => keyboard.focus(rowId, cellKey) : void 0,
       onMouseEnter: () => setIsHovered(true),
       onMouseLeave: () => setIsHovered(false),
       children: /* @__PURE__ */ jsxRuntime.jsxs("div", { className: `h-5 flex items-center ${alignClass} gap-1 relative`, children: [
@@ -498,6 +533,54 @@ var EditableCell = ({
   );
 };
 var editablecell_default = EditableCell;
+var GridTextInput = ({
+  keyboard,
+  rowId,
+  cellKey,
+  value,
+  onChange,
+  placeholder,
+  className,
+  style,
+  title,
+  onEnter
+}) => {
+  const ref = React3.useRef(null);
+  const { register, focus, navigate } = keyboard;
+  React3.useEffect(() => {
+    return register({
+      rowId,
+      cellKey,
+      ref
+    });
+  }, [register, rowId, cellKey]);
+  return /* @__PURE__ */ jsxRuntime.jsx(
+    "input",
+    {
+      ref,
+      type: "text",
+      value,
+      onChange: (e) => onChange(e.target.value),
+      placeholder,
+      className,
+      style,
+      title,
+      onFocus: () => focus(rowId, cellKey),
+      onKeyDown: (e) => {
+        if (e.key === "Tab") {
+          e.preventDefault();
+          navigate(e.shiftKey ? "left" : "right");
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (onEnter) onEnter();
+          else e.target.blur();
+        }
+      },
+      autoComplete: "off"
+    }
+  );
+};
+var gridtextinput_default = GridTextInput;
 var RowToolbar = ({
   hovered,
   anySelected = false,
@@ -566,6 +649,7 @@ var RowToolbar = ({
   );
 };
 var rowtoolbar_default = RowToolbar;
+var LABEL_CELL_KEY = "__label__";
 var naturalezaPill = (n) => {
   switch (n) {
     case "Imponible":
@@ -599,12 +683,7 @@ var DataRow = ({
   onLabelChange,
   onValueChange,
   onViewSource,
-  isCellFocused,
-  onCellFocus,
-  onNavigate,
-  editTrigger = 0,
-  clearTrigger = 0,
-  editInitialValue,
+  keyboard,
   showVariableColumn = false,
   onToggleVariable,
   showClassificationColumns = false,
@@ -657,7 +736,18 @@ var DataRow = ({
             }
           ),
           /* @__PURE__ */ jsxRuntime.jsxs("div", { className: `flex items-center gap-0.5 min-w-0 ${indented ? "pl-4" : ""}`, children: [
-            /* @__PURE__ */ jsxRuntime.jsx(
+            keyboard ? /* @__PURE__ */ jsxRuntime.jsx(
+              gridtextinput_default,
+              {
+                keyboard,
+                rowId: row.id,
+                cellKey: LABEL_CELL_KEY,
+                value: row.label,
+                onChange: onLabelChange,
+                className: `flex-1 min-w-0 ${T.rowLabel}`,
+                title: row.label
+              }
+            ) : /* @__PURE__ */ jsxRuntime.jsx(
               "input",
               {
                 type: "text",
@@ -727,7 +817,6 @@ var DataRow = ({
           );
         })(),
         months.map((p, mi) => {
-          const cellFocused = isCellFocused?.(mi) ?? false;
           const vline = mi < months.length - 1 ? T.vline : "";
           return /* @__PURE__ */ jsxRuntime.jsx(
             editablecell_default,
@@ -740,12 +829,9 @@ var DataRow = ({
               type: "currency",
               originClass: getCellOriginClass?.(p.id),
               onViewSource: p.sourceFileId && onViewSource ? () => onViewSource([p.sourceFileId]) : void 0,
-              focused: cellFocused,
-              onCellFocus: onCellFocus ? () => onCellFocus(mi) : void 0,
-              onNavigate,
-              requestEdit: cellFocused ? editTrigger : 0,
-              requestClear: cellFocused ? clearTrigger : 0,
-              editInitialValue: cellFocused ? editInitialValue : void 0
+              keyboard,
+              rowId: row.id,
+              cellKey: p.id
             },
             p.id
           );
@@ -756,6 +842,7 @@ var DataRow = ({
   );
 };
 var datarow_default = DataRow;
+var addRowIdFor = (sectionType) => `__add__:${sectionType}`;
 var AddRow = ({
   section,
   months,
@@ -764,12 +851,28 @@ var AddRow = ({
   onAddRow,
   onAddRowWithValue,
   showVariableColumn = false,
-  showClassificationColumns = false
+  showClassificationColumns = false,
+  keyboard
 }) => {
   const subtract = isSubtractType(section.type);
   const bgClass = subtract ? "bg-status-pending/5 border-status-pending/20" : "bg-surface-1/40 border-edge-subtle/10";
+  const rowId = addRowIdFor(section.type);
   return /* @__PURE__ */ jsxRuntime.jsxs("tr", { className: `border-b border-dashed ${bgClass}`, children: [
-    /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${showClassificationColumns ? "" : T.vline}`, children: /* @__PURE__ */ jsxRuntime.jsx(
+    /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${showClassificationColumns ? "" : T.vline}`, children: keyboard ? /* @__PURE__ */ jsxRuntime.jsx(
+      gridtextinput_default,
+      {
+        keyboard,
+        rowId,
+        cellKey: LABEL_CELL_KEY,
+        value: labelValue,
+        onChange: onLabelChange,
+        placeholder: section.placeholder,
+        className: `w-full ${T.inputPlaceholder}`,
+        onEnter: () => {
+          if (labelValue.trim()) onAddRow(labelValue);
+        }
+      }
+    ) : /* @__PURE__ */ jsxRuntime.jsx(
       "input",
       {
         type: "text",
@@ -797,7 +900,10 @@ var AddRow = ({
         isDeduction: subtract,
         hasData: false,
         className: mi < months.length - 1 ? T.vline : "",
-        type: "currency"
+        type: "currency",
+        keyboard,
+        rowId,
+        cellKey: p.id
       },
       p.id
     )),
@@ -1237,59 +1343,127 @@ var HeaderSelectionBar = ({ selectedCount, canGroup, monthCount, naming, onNamin
     }
   );
 };
-var useGridKeyboard = ({ visibleRowIds, colCount }) => {
+var useGridKeyboard = ({ visibleRowIds }) => {
   const [focusedCell, setFocusedCell] = React3.useState(null);
   const [editTrigger, setEditTrigger] = React3.useState(0);
   const [clearTrigger, setClearTrigger] = React3.useState(0);
   const [editInitialValue, setEditInitialValue] = React3.useState(null);
-  const isFocused = React3.useCallback((rowId, colIndex) => {
-    return focusedCell?.rowId === rowId && focusedCell?.colIndex === colIndex;
+  const focusedCellRef = React3.useRef(focusedCell);
+  React3.useEffect(() => {
+    focusedCellRef.current = focusedCell;
   }, [focusedCell]);
-  const focus = React3.useCallback((rowId, colIndex) => {
-    setFocusedCell({ rowId, colIndex });
+  const visibleRowIdsRef = React3.useRef(visibleRowIds);
+  React3.useEffect(() => {
+    visibleRowIdsRef.current = visibleRowIds;
+  }, [visibleRowIds]);
+  const registryRef = React3.useRef(/* @__PURE__ */ new Map());
+  const register = React3.useCallback((stop) => {
+    const list = registryRef.current.get(stop.rowId);
+    if (list) {
+      if (process.env.NODE_ENV !== "production" && list.some((s) => s.cellKey === stop.cellKey)) {
+        console.warn(
+          `[useGridKeyboard] Duplicate stop registration: rowId="${stop.rowId}" cellKey="${stop.cellKey}". Only the first stop is reachable via cellKey lookups (arrow up/down, focus()). Check for a repeated column key or a stale registration.`
+        );
+      }
+      list.push(stop);
+    } else {
+      registryRef.current.set(stop.rowId, [stop]);
+    }
+    return () => {
+      const cur = registryRef.current.get(stop.rowId);
+      if (!cur) return;
+      const next = cur.filter((s) => s !== stop);
+      if (next.length === 0) registryRef.current.delete(stop.rowId);
+      else registryRef.current.set(stop.rowId, next);
+    };
+  }, []);
+  const getOrderedStops = React3.useCallback((rowId) => {
+    const list = registryRef.current.get(rowId);
+    if (!list || list.length === 0) return [];
+    const alive = list.filter((s) => s.ref.current != null);
+    alive.sort((a, b) => {
+      const ar = a.ref.current;
+      const br = b.ref.current;
+      if (ar === br) return 0;
+      const pos = ar.compareDocumentPosition(br);
+      if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+      if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+      return 0;
+    });
+    return alive;
+  }, []);
+  const isFocused = React3.useCallback((rowId, cellKey) => {
+    return focusedCell?.rowId === rowId && focusedCell?.cellKey === cellKey;
+  }, [focusedCell]);
+  const focus = React3.useCallback((rowId, cellKey) => {
+    setFocusedCell({ rowId, cellKey });
   }, []);
   const clearFocus = React3.useCallback(() => setFocusedCell(null), []);
+  const focusStop = React3.useCallback((stop) => {
+    stop.ref.current?.focus();
+    setFocusedCell({ rowId: stop.rowId, cellKey: stop.cellKey });
+  }, []);
   const navigate = React3.useCallback((direction) => {
-    setFocusedCell((prev) => {
-      if (!prev) return null;
-      const rowIdx = visibleRowIds.indexOf(prev.rowId);
-      if (rowIdx === -1) return null;
-      let newRow = rowIdx;
-      let newCol = prev.colIndex;
-      switch (direction) {
-        case "right":
-          if (newCol < colCount - 1) {
-            newCol++;
-          } else if (newRow < visibleRowIds.length - 1) {
-            newRow++;
-            newCol = 0;
+    const cur = focusedCellRef.current;
+    if (!cur) return;
+    const rowIds = visibleRowIdsRef.current;
+    const rowIdx = rowIds.indexOf(cur.rowId);
+    if (rowIdx === -1) return;
+    const stops = getOrderedStops(cur.rowId);
+    const colIdx = stops.findIndex((s) => s.cellKey === cur.cellKey);
+    switch (direction) {
+      case "right": {
+        if (colIdx >= 0 && colIdx < stops.length - 1) {
+          focusStop(stops[colIdx + 1]);
+        } else {
+          for (let i = rowIdx + 1; i < rowIds.length; i++) {
+            const next = getOrderedStops(rowIds[i]);
+            if (next.length > 0) {
+              focusStop(next[0]);
+              break;
+            }
           }
-          break;
-        case "left":
-          if (newCol > 0) {
-            newCol--;
-          } else if (newRow > 0) {
-            newRow--;
-            newCol = colCount - 1;
-          }
-          break;
-        case "down":
-          if (newRow < visibleRowIds.length - 1) newRow++;
-          break;
-        case "up":
-          if (newRow > 0) newRow--;
-          break;
+        }
+        break;
       }
-      return { rowId: visibleRowIds[newRow], colIndex: newCol };
-    });
-  }, [visibleRowIds, colCount]);
-  const navigateAndEdit = React3.useCallback((direction) => {
-    navigate(direction);
-    setEditInitialValue(null);
-    setTimeout(() => setEditTrigger((prev) => prev + 1), 0);
-  }, [navigate]);
+      case "left": {
+        if (colIdx > 0) {
+          focusStop(stops[colIdx - 1]);
+        } else {
+          for (let i = rowIdx - 1; i >= 0; i--) {
+            const prev = getOrderedStops(rowIds[i]);
+            if (prev.length > 0) {
+              focusStop(prev[prev.length - 1]);
+              break;
+            }
+          }
+        }
+        break;
+      }
+      case "down": {
+        for (let i = rowIdx + 1; i < rowIds.length; i++) {
+          const next = getOrderedStops(rowIds[i]);
+          if (next.length === 0) continue;
+          const same = next.find((s) => s.cellKey === cur.cellKey);
+          if (same) focusStop(same);
+          return;
+        }
+        break;
+      }
+      case "up": {
+        for (let i = rowIdx - 1; i >= 0; i--) {
+          const prev = getOrderedStops(rowIds[i]);
+          if (prev.length === 0) continue;
+          const same = prev.find((s) => s.cellKey === cur.cellKey);
+          if (same) focusStop(same);
+          return;
+        }
+        break;
+      }
+    }
+  }, [focusStop, getOrderedStops]);
   const handleContainerKeyDown = React3.useCallback((e) => {
-    if (!focusedCell) return;
+    if (!focusedCellRef.current) return;
     const target = e.target;
     if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
     switch (e.key) {
@@ -1336,7 +1510,7 @@ var useGridKeyboard = ({ visibleRowIds, colCount }) => {
         }
         break;
     }
-  }, [focusedCell, navigate, clearFocus]);
+  }, [navigate, clearFocus]);
   return {
     focusedCell,
     editTrigger,
@@ -1346,25 +1520,13 @@ var useGridKeyboard = ({ visibleRowIds, colCount }) => {
     focus,
     clearFocus,
     navigate,
-    navigateAndEdit,
+    register,
     handleContainerKeyDown
   };
 };
 
 // src/renta/usekeyboard.ts
-var useKeyboard = ({ visibleRowIds, monthCount }) => {
-  const grid = useGridKeyboard({ visibleRowIds, colCount: monthCount });
-  return {
-    ...grid,
-    // Alias colIndex as monthIndex for RentaTable compatibility
-    get focusedCell() {
-      if (!grid.focusedCell) return null;
-      return { ...grid.focusedCell, monthIndex: grid.focusedCell.colIndex };
-    },
-    isFocused: (rowId, monthIndex) => grid.isFocused(rowId, monthIndex),
-    focus: (rowId, monthIndex) => grid.focus(rowId, monthIndex)
-  };
-};
+var useKeyboard = ({ visibleRowIds }) => useGridKeyboard({ visibleRowIds });
 var useDragReorder = () => {
   const [dragRowId, setDragRowId] = React3.useState(null);
   const [dropTargetId, setDropTargetId] = React3.useState(null);
@@ -1565,10 +1727,11 @@ var RentaTable = ({
           ids.push(item.row.id);
         }
       }
+      ids.push(`__add__:${section.type}`);
     }
     return ids;
   }, [effectiveSections, rows, forceExpanded]);
-  const keyboard = useKeyboard({ visibleRowIds, monthCount: monthsArray.length });
+  const keyboard = useKeyboard({ visibleRowIds });
   const drag = useDragReorder();
   const expandTimerRef = React3.useRef(null);
   React3.useEffect(() => {
@@ -1730,12 +1893,7 @@ var RentaTable = ({
       showClassificationColumns,
       onToggleVariable: () => toggleVariable(r.id),
       onToggleNaturaleza: () => toggleNaturaleza(r.id),
-      isCellFocused: (mi) => keyboard.isFocused(r.id, mi),
-      onCellFocus: (mi) => keyboard.focus(r.id, mi),
-      onNavigate: keyboard.navigate,
-      editTrigger: keyboard.editTrigger,
-      clearTrigger: keyboard.clearTrigger,
-      editInitialValue: keyboard.editInitialValue,
+      keyboard,
       isDragging: drag.dragRowId === r.id,
       dropIndicator: drag.dropTargetId === r.id ? drag.dropPosition : null,
       onDragStart: drag.handleDragStart(r.id),
@@ -1886,7 +2044,8 @@ var RentaTable = ({
                     onAddRow: (label) => addRow(section.type, label),
                     onAddRowWithValue: (monthId, value) => addRowWithValue(section.type, monthId, value),
                     showVariableColumn,
-                    showClassificationColumns
+                    showClassificationColumns,
+                    keyboard
                   }
                 ),
                 effectiveSections.length > 1 && (() => {
@@ -2254,48 +2413,97 @@ function EditableField({
   symbol = "\xD7",
   originClass,
   width,
-  className = ""
+  className = "",
+  keyboard,
+  rowId,
+  cellKey
 }) {
   const [isEditing, setIsEditing] = React3.useState(false);
   const [editValue, setEditValue] = React3.useState("");
   const inputRef = React3.useRef(null);
+  const wrapperRef = React3.useRef(null);
+  const committingRef = React3.useRef(false);
+  const useRegistry = !!(keyboard && rowId && cellKey);
+  const register = keyboard?.register;
+  React3.useEffect(() => {
+    if (!useRegistry || !register) return;
+    return register({
+      rowId,
+      cellKey,
+      ref: wrapperRef
+    });
+  }, [useRegistry, register, rowId, cellKey]);
+  const cellFocused = useRegistry ? keyboard.isFocused(rowId, cellKey) : false;
+  const effectiveEditTrigger = useRegistry && cellFocused ? keyboard.editTrigger : 0;
+  const effectiveEditInitialValue = useRegistry && cellFocused ? keyboard.editInitialValue : void 0;
   const hidden = defaultValue != null && value === defaultValue;
-  const startEdit = () => {
-    setEditValue(value?.toString() ?? "");
+  const startEdit = (initialValue) => {
+    committingRef.current = false;
+    setEditValue(initialValue ?? value?.toString() ?? "");
     setIsEditing(true);
   };
   React3.useEffect(() => {
+    if (effectiveEditTrigger > 0 && !isEditing) {
+      startEdit(effectiveEditInitialValue ?? void 0);
+    }
+  }, [effectiveEditTrigger]);
+  React3.useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
-      inputRef.current.select();
+      if (editValue.length <= 1) {
+        const len = inputRef.current.value.length;
+        inputRef.current.setSelectionRange(len, len);
+      } else {
+        inputRef.current.select();
+      }
     }
   }, [isEditing]);
   const commitEdit = () => {
+    if (committingRef.current) return;
+    committingRef.current = true;
+    const inputStillFocused = document.activeElement === inputRef.current;
     setIsEditing(false);
     const parsed = type === "percent" ? parseFloat(editValue) : parseInt(editValue, 10);
     if (editValue !== "" && !isNaN(parsed)) {
       const clamped = Math.max(min, Math.min(max, Math.round(parsed)));
       if (clamped !== value) onChange(clamped);
     }
+    if (useRegistry && inputStillFocused) {
+      wrapperRef.current?.focus();
+    }
   };
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" || e.key === "Tab") {
+    if (e.key === "Enter") {
       e.preventDefault();
       commitEdit();
+      if (useRegistry) keyboard.navigate("down");
+    } else if (e.key === "Tab") {
+      if (useRegistry) {
+        e.preventDefault();
+        commitEdit();
+        keyboard.navigate(e.shiftKey ? "left" : "right");
+      }
     } else if (e.key === "Escape") {
+      committingRef.current = true;
       setIsEditing(false);
     }
   };
   const handleClick = () => {
-    if (!isEditing) startEdit();
+    if (!isEditing) {
+      if (useRegistry) keyboard.focus(rowId, cellKey);
+      startEdit();
+    }
   };
   return /* @__PURE__ */ jsxRuntime.jsxs(
     "div",
     {
+      ref: useRegistry ? wrapperRef : void 0,
+      tabIndex: useRegistry ? 0 : void 0,
       className: `group/field flex items-center gap-1.5 rounded-md cursor-pointer
-                hover:bg-surface-1/60 transition-colors ${className}`,
+                hover:bg-surface-1/60 transition-colors ${useRegistry ? "outline-none" : ""} ${className}`,
       style: width ? { width } : void 0,
       onClick: handleClick,
+      onFocus: useRegistry ? () => keyboard.focus(rowId, cellKey) : void 0,
       children: [
         /* @__PURE__ */ jsxRuntime.jsxs("div", { className: `
                 shrink-0 relative inline-flex items-center gap-0.5 justify-center
@@ -2448,6 +2656,7 @@ var ORIGIN_CLASSES = {
   user: "text-ink-primary",
   calculated: "text-status-info"
 };
+var ADD_ROW_ID = "__add__";
 function AssetTable({
   columns,
   rows,
@@ -2496,18 +2705,11 @@ function AssetTable({
       return col;
     });
   }, [columns, toggledCols]);
-  const { keyToPosition, kbColCount } = React3.useMemo(() => {
-    const map = {};
-    let pos = 0;
-    for (const col of resolvedColumns) {
-      if (col.type === "text") continue;
-      map[col.key] = pos++;
-      if (col.compound) map[col.compound.key] = pos++;
-    }
-    return { keyToPosition: map, kbColCount: pos };
-  }, [resolvedColumns]);
-  const visibleRowIds = React3.useMemo(() => activeRows.map((r) => r.id), [activeRows]);
-  const keyboard = useGridKeyboard({ visibleRowIds, colCount: kbColCount });
+  const visibleRowIds = React3.useMemo(
+    () => [...activeRows.map((r) => r.id), ADD_ROW_ID],
+    [activeRows]
+  );
+  const keyboard = useGridKeyboard({ visibleRowIds });
   const labelCol = resolvedColumns.find((c) => c.isLabel) || resolvedColumns[0];
   const toggleSelect = React3.useCallback((rowId) => {
     setSelectedRows((prev) => {
@@ -2575,19 +2777,6 @@ function AssetTable({
   const cellOrigin = (row, key, col) => {
     if (col.autoComputedClass?.(row)) return ORIGIN_CLASSES.calculated;
     return getCellOriginClass?.(row.id, key);
-  };
-  const kbProps = (rowId, key) => {
-    const pos = keyToPosition[key];
-    if (pos === void 0) return {};
-    const focused = keyboard.isFocused(rowId, pos);
-    return {
-      focused,
-      onCellFocus: () => keyboard.focus(rowId, pos),
-      onNavigate: keyboard.navigate,
-      requestEdit: focused ? keyboard.editTrigger : 0,
-      requestClear: focused ? keyboard.clearTrigger : 0,
-      editInitialValue: focused ? keyboard.editInitialValue : void 0
-    };
   };
   return /* @__PURE__ */ jsxRuntime.jsxs(jsxRuntime.Fragment, { children: [
     /* @__PURE__ */ jsxRuntime.jsx("div", { onKeyDown: keyboard.handleContainerKeyDown, tabIndex: 0, className: "outline-none mb-4 sm:mb-6", children: /* @__PURE__ */ jsxRuntime.jsxs(
@@ -2724,11 +2913,13 @@ function AssetTable({
                           }
                         ),
                         /* @__PURE__ */ jsxRuntime.jsx("div", { className: "flex items-center gap-0.5 min-w-0", children: /* @__PURE__ */ jsxRuntime.jsx(
-                          "input",
+                          gridtextinput_default,
                           {
-                            type: "text",
+                            keyboard,
+                            rowId: row.id,
+                            cellKey: col.key,
                             value: row[col.key] || "",
-                            onChange: (e) => updateField(row.id, col.key, e.target.value),
+                            onChange: (v) => updateField(row.id, col.key, v),
                             className: `flex-1 min-w-0 ${T.inputLabel} !p-0 ${getCellOriginClass?.(row.id, col.key) || ""}`,
                             placeholder: col.placeholder || col.label
                           }
@@ -2736,15 +2927,24 @@ function AssetTable({
                       ] }, col.key);
                     }
                     if (col.type === "text") {
+                      if (col.visible && !col.visible(row)) {
+                        return /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} text-center ${vline}`, children: /* @__PURE__ */ jsxRuntime.jsx("span", { className: "text-[11px] text-ink-tertiary/60", children: "\u2014" }) }, col.key);
+                      }
+                      if (col.readOnly?.(row)) {
+                        const v = row[col.key] || "";
+                        return /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${vline}`, children: /* @__PURE__ */ jsxRuntime.jsx("div", { className: `text-xs ${getCellOriginClass?.(row.id, col.key) || "text-ink-primary"}`, children: v || "\u2014" }) }, col.key);
+                      }
                       const isRight = col.align === "right";
                       const isCenter = col.align === "center";
                       const textAlign = isRight ? "text-right" : isCenter ? "text-center" : "text-left";
                       return /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${vline}`, children: /* @__PURE__ */ jsxRuntime.jsx(
-                        "input",
+                        gridtextinput_default,
                         {
-                          type: "text",
+                          keyboard,
+                          rowId: row.id,
+                          cellKey: col.key,
                           value: row[col.key] || "",
-                          onChange: (e) => updateField(row.id, col.key, e.target.value),
+                          onChange: (v) => updateField(row.id, col.key, v),
                           className: `w-full ${T.input} ${textAlign} ${!isRight && !isCenter ? "pl-1" : ""} ${getCellOriginClass?.(row.id, col.key) || ""}`,
                           style: isRight || isCenter ? { padding: 0 } : void 0,
                           placeholder: col.placeholder || col.label
@@ -2773,7 +2973,10 @@ function AssetTable({
                             min: f.min ?? 0,
                             max: f.max ?? 99,
                             originClass: cellOrigin(row, f.key, col),
-                            className: alignCls
+                            className: alignCls,
+                            keyboard,
+                            rowId: row.id,
+                            cellKey: f.key
                           }
                         ) }, col.key);
                       }
@@ -2792,7 +2995,9 @@ function AssetTable({
                             align: "center",
                             originClass: cellOrigin(row, col.key, col),
                             asDiv: true,
-                            ...kbProps(row.id, col.key)
+                            keyboard,
+                            rowId: row.id,
+                            cellKey: col.key
                           }
                         ),
                         /* @__PURE__ */ jsxRuntime.jsx("span", { className: "text-ink-tertiary", children: sep }),
@@ -2806,7 +3011,9 @@ function AssetTable({
                             align: "center",
                             originClass: cellOrigin(row, col.compound.key, col),
                             asDiv: true,
-                            ...kbProps(row.id, col.compound.key)
+                            keyboard,
+                            rowId: row.id,
+                            cellKey: col.compound.key
                           }
                         )
                       ] }) }, col.key);
@@ -2824,7 +3031,9 @@ function AssetTable({
                           align: col.align || "center",
                           className: vline,
                           originClass: cellOrigin(row, col.key, col),
-                          ...kbProps(row.id, col.key)
+                          keyboard,
+                          rowId: row.id,
+                          cellKey: col.key
                         },
                         col.key
                       );
@@ -2845,7 +3054,9 @@ function AssetTable({
                           originClass: cellOrigin(row, col.key, col),
                           onViewSource: cellViewSource,
                           asDiv: true,
-                          ...kbProps(row.id, col.key)
+                          keyboard,
+                          rowId: row.id,
+                          cellKey: col.key
                         }
                       ) }, col.key);
                     }
@@ -2860,7 +3071,9 @@ function AssetTable({
                         className: vline,
                         originClass: cellOrigin(row, col.key, col),
                         onViewSource: cellViewSource,
-                        ...kbProps(row.id, col.key)
+                        keyboard,
+                        rowId: row.id,
+                        cellKey: col.key
                       },
                       col.key
                     );
@@ -2876,15 +3089,17 @@ function AssetTable({
               const vline = i < resolvedColumns.length - 1 ? T.vline : "";
               if (col.isLabel) {
                 return /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${vline}`, children: /* @__PURE__ */ jsxRuntime.jsx(
-                  "input",
+                  gridtextinput_default,
                   {
-                    type: "text",
-                    placeholder: addPlaceholder || `Agregar...`,
+                    keyboard,
+                    rowId: ADD_ROW_ID,
+                    cellKey: col.key,
                     value: newRowValues[col.key] || "",
-                    onChange: (e) => setNewRowValues((prev) => ({ ...prev, [col.key]: e.target.value })),
+                    onChange: (v) => setNewRowValues((prev) => ({ ...prev, [col.key]: v })),
+                    placeholder: addPlaceholder || `Agregar...`,
                     className: `w-full ${T.inputPlaceholder}`,
-                    onKeyDown: (e) => {
-                      if (e.key === "Enter" && (newRowValues[col.key] || "").trim()) addRow();
+                    onEnter: () => {
+                      if ((newRowValues[col.key] || "").trim()) addRow();
                     }
                   }
                 ) }, col.key);
@@ -2894,12 +3109,14 @@ function AssetTable({
                 const isAddCenter = col.align === "center";
                 const addTextAlign = isAddRight ? "text-right" : isAddCenter ? "text-center" : "text-left";
                 return /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${vline}`, children: /* @__PURE__ */ jsxRuntime.jsx(
-                  "input",
+                  gridtextinput_default,
                   {
-                    type: "text",
-                    placeholder: col.placeholder || col.label,
+                    keyboard,
+                    rowId: ADD_ROW_ID,
+                    cellKey: col.key,
                     value: newRowValues[col.key] || "",
-                    onChange: (e) => setNewRowValues((prev) => ({ ...prev, [col.key]: e.target.value })),
+                    onChange: (v) => setNewRowValues((prev) => ({ ...prev, [col.key]: v })),
+                    placeholder: col.placeholder || col.label,
                     className: `w-full ${T.inputPlaceholder} ${addTextAlign}`,
                     style: isAddRight || isAddCenter ? { padding: 0 } : void 0
                   }
@@ -2916,7 +3133,10 @@ function AssetTable({
                   type: col.type,
                   hasData: false,
                   align: col.align,
-                  className: vline
+                  className: vline,
+                  keyboard,
+                  rowId: ADD_ROW_ID,
+                  cellKey: col.key
                 },
                 col.key
               );
@@ -3103,29 +3323,11 @@ var BalanceTable = ({
   const { bg: headerBg, text: headerText, border: borderColor } = resolveColors(colorSchemeProp);
   const { getHoverProps } = useRowHover();
   const rowIds = rows.map((r) => r.id);
-  const keyboard = useGridKeyboard({ visibleRowIds: rowIds, colCount: 7 });
+  const keyboard = useGridKeyboard({ visibleRowIds: rowIds });
   const handleChange = (rowIdx, key, value) => {
     const updated = [...rows];
     updated[rowIdx] = { ...updated[rowIdx], [key]: value };
     onRowsChange(updated);
-  };
-  const currencyColIndex = (key) => {
-    switch (key) {
-      case "total_activos":
-        return 0;
-      case "total_pasivos":
-        return 1;
-      case "patrimonio":
-        return 2;
-      case "total_ingresos":
-        return 3;
-      case "total_gastos":
-        return 4;
-      case "resultado":
-        return 5;
-      default:
-        return -1;
-    }
   };
   if (rows.length === 0) {
     return /* @__PURE__ */ jsxRuntime.jsx("div", { className: "outline-none flex flex-col gap-3", children: /* @__PURE__ */ jsxRuntime.jsxs("div", { children: [
@@ -3196,7 +3398,6 @@ var BalanceTable = ({
             /* @__PURE__ */ jsxRuntime.jsx("td", { className: `${T.cellEdit} ${T.vline} text-center`, children: /* @__PURE__ */ jsxRuntime.jsx("span", { className: "text-xs tabular-nums text-ink-primary", children: "Empresa 100%" }) }),
             CURRENCY_KEYS.map((key) => {
               const val = row[key];
-              const colIdx = currencyColIndex(key);
               const isNeg = typeof val === "number" && val < 0;
               const isBold = key === "patrimonio" || key === "resultado";
               const isLast = key === "resultado";
@@ -3209,12 +3410,9 @@ var BalanceTable = ({
                   hasData: val != null,
                   className: `${!isLast ? T.vline : ""} ${isNeg ? "text-status-pending" : ""} ${isBold ? "font-semibold" : ""}`,
                   originClass: getCellOriginClass?.(row.id, key),
-                  focused: keyboard.isFocused(row.id, colIdx),
-                  onCellFocus: () => keyboard.focus(row.id, colIdx),
-                  onNavigate: keyboard.navigate,
-                  requestEdit: keyboard.isFocused(row.id, colIdx) ? keyboard.editTrigger : 0,
-                  requestClear: keyboard.isFocused(row.id, colIdx) ? keyboard.clearTrigger : 0,
-                  editInitialValue: keyboard.isFocused(row.id, colIdx) ? keyboard.editInitialValue : void 0
+                  keyboard,
+                  rowId: row.id,
+                  cellKey: key
                 },
                 key
               );
@@ -3230,7 +3428,10 @@ var BalanceTable = ({
                   onChange: (v) => handleChange(rowIdx, "participacion", v),
                   type: "percent",
                   symbol: "%",
-                  originClass: getCellOriginClass?.(row.id, "participacion")
+                  originClass: getCellOriginClass?.(row.id, "participacion"),
+                  keyboard,
+                  rowId: row.id,
+                  cellKey: "participacion"
                 }
               )
             ] }) }),

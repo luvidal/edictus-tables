@@ -32,7 +32,8 @@ src/
 │   ├── utils.ts           # displayCurrency, displayCurrencyCompact, generateId, formatDeletedDate, MONTH_LABELS
 │   ├── editablecell.tsx   # Inline-editable table cell
 │   ├── recyclebin.tsx     # Recycle bin footer (table-based, optional renderCells)
-│   ├── usegridkeyboard.ts # Grid keyboard navigation hook (arrow keys, Tab, Enter, Escape)
+│   ├── usegridkeyboard.ts # Registry-based grid keyboard nav (arrow keys, Tab, Enter, Escape). Cells `register({ rowId, cellKey, ref })` on mount; `navigate(direction)` moves DOM focus.
+│   ├── gridtextinput.tsx  # Plain text input that registers a tab stop (used by label/text columns)
 │   ├── userowhover.ts    # Row hover state hook
 │   └── usemobile.ts       # useIsMobile hook
 ├── renta/                 # RentaTable (monthly spreadsheet) — see renta/README.md

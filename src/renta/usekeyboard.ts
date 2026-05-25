@@ -1,24 +1,16 @@
 import { useGridKeyboard } from '../common/usegridkeyboard'
-import type { GridFocusedCell } from '../common/usegridkeyboard'
-
-export type FocusedCell = GridFocusedCell & { monthIndex: number }
+export type { GridFocusedCell as FocusedCell } from '../common/usegridkeyboard'
 
 interface UseKeyboardProps {
     visibleRowIds: string[]
-    monthCount: number
 }
 
-export const useKeyboard = ({ visibleRowIds, monthCount }: UseKeyboardProps) => {
-    const grid = useGridKeyboard({ visibleRowIds, colCount: monthCount })
-
-    return {
-        ...grid,
-        // Alias colIndex as monthIndex for RentaTable compatibility
-        get focusedCell() {
-            if (!grid.focusedCell) return null
-            return { ...grid.focusedCell, monthIndex: grid.focusedCell.colIndex }
-        },
-        isFocused: (rowId: string, monthIndex: number) => grid.isFocused(rowId, monthIndex),
-        focus: (rowId: string, monthIndex: number) => grid.focus(rowId, monthIndex),
-    }
-}
+/**
+ * Thin wrapper around `useGridKeyboard` kept for the renta call site.
+ * Pre-registry, this hook also tracked `monthCount` and exposed a
+ * `monthIndex` alias on `focusedCell`. With the registry refactor neither
+ * is needed: column count derives from each row's registered stops and
+ * cells are addressed by month id (cellKey), not by index.
+ */
+export const useKeyboard = ({ visibleRowIds }: UseKeyboardProps) =>
+    useGridKeyboard({ visibleRowIds })

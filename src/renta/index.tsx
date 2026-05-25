@@ -150,7 +150,9 @@ const RentaTable = ({
 
     const anySelected = selectedRows.size > 0
 
-    // Compute visible row IDs for keyboard navigation
+    // Compute visible row IDs for keyboard navigation. A synthetic
+    // `__add__:<sectionType>` id is appended at each section boundary so Tab
+    // walks from the last data row of a section into that section's add row.
     const visibleRowIds = useMemo(() => {
         const ids: string[] = []
         for (const section of effectiveSections) {
@@ -166,11 +168,12 @@ const RentaTable = ({
                     ids.push(item.row.id)
                 }
             }
+            ids.push(`__add__:${section.type}`)
         }
         return ids
     }, [effectiveSections, rows, forceExpanded])
 
-    const keyboard = useKeyboard({ visibleRowIds, monthCount: monthsArray.length })
+    const keyboard = useKeyboard({ visibleRowIds })
     const drag = useDragReorder()
 
     // Auto-expand collapsed group headers when dragging over them for 600ms
@@ -367,12 +370,7 @@ const RentaTable = ({
             showClassificationColumns={showClassificationColumns}
             onToggleVariable={() => toggleVariable(r.id)}
             onToggleNaturaleza={() => toggleNaturaleza(r.id)}
-            isCellFocused={(mi) => keyboard.isFocused(r.id, mi)}
-            onCellFocus={(mi) => keyboard.focus(r.id, mi)}
-            onNavigate={keyboard.navigate}
-            editTrigger={keyboard.editTrigger}
-            clearTrigger={keyboard.clearTrigger}
-            editInitialValue={keyboard.editInitialValue}
+            keyboard={keyboard}
             isDragging={drag.dragRowId === r.id}
             dropIndicator={drag.dropTargetId === r.id ? drag.dropPosition : null}
             onDragStart={drag.handleDragStart(r.id)}
@@ -530,6 +528,7 @@ const RentaTable = ({
                                 onAddRowWithValue={(monthId, value) => addRowWithValue(section.type, monthId, value)}
                                 showVariableColumn={showVariableColumn}
                                 showClassificationColumns={showClassificationColumns}
+                                keyboard={keyboard}
                             />
                             {/* Subtotal row — below AddRow, only when table has multiple sections */}
                             {effectiveSections.length > 1 && (() => {

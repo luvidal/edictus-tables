@@ -6,6 +6,7 @@ import { Eye } from 'lucide-react'
 import { T } from './styles'
 import { useIsMobile } from './usemobile'
 import { displayCurrencyCompact, displayCurrency } from './utils'
+import type { GridKeyboard } from './usegridkeyboard'
 
 const parseCurrency = (value: string): number | null => {
     const cleaned = value.replace(/[^0-9-]/g, '')
@@ -26,20 +27,31 @@ interface EditableCellProps {
     onViewSource?: () => void
     /** Render as div instead of td (for non-table contexts) */
     asDiv?: boolean
-    /** Show focus ring (keyboard navigation) */
+    /**
+     * @deprecated Pass `keyboard`/`rowId`/`cellKey` instead — the registry path
+     * derives focus from the `useGridKeyboard` hook. Slated for removal in the
+     * next major. Zero call sites in jogi/main as of 2026-05-25.
+     */
     focused?: boolean
-    /** Called when cell is clicked (for focus tracking) */
+    /** @deprecated See `focused`. Use registry-path keyboard binding. */
     onCellFocus?: () => void
-    /** Called after edit commit to navigate to next cell (Tab→right, Enter→down) */
+    /** @deprecated See `focused`. Use registry-path keyboard binding. */
     onNavigate?: (direction: 'up' | 'down' | 'left' | 'right') => void
-    /** Increment to trigger edit externally (keyboard Enter/F2 on focused cell) */
+    /** @deprecated See `focused`. Use registry-path keyboard binding. */
     requestEdit?: number
-    /** Increment to clear the cell value (keyboard Delete/Backspace on focused cell) */
+    /** @deprecated See `focused`. Use registry-path keyboard binding. */
     requestClear?: number
-    /** Initial value for type-to-edit (the character pressed to start editing) */
+    /** @deprecated See `focused`. Use registry-path keyboard binding. */
     editInitialValue?: string | null
     /** Text color class based on cell origin (ai/user/calculated). Overrides default text-ink-primary. */
     originClass?: string
+    /** Registry-path keyboard binding. When `keyboard`, `rowId`, and `cellKey` are all
+     *  supplied, this cell registers a tab stop and reads focus/edit/clear state from
+     *  the keyboard. The legacy per-cell focus/onNavigate/requestEdit props are then
+     *  ignored. Tab routes through `keyboard.navigate(...)`. */
+    keyboard?: GridKeyboard
+    rowId?: string
+    cellKey?: string
 }
 
 /**
@@ -69,14 +81,46 @@ const EditableCell = ({
     requestClear = 0,
     editInitialValue,
     originClass,
+    keyboard,
+    rowId,
+    cellKey,
 }: EditableCellProps) => {
     const isMobile = useIsMobile()
     const [isEditing, setIsEditing] = useState(false)
     const [editValue, setEditValue] = useState('')
     const [isHovered, setIsHovered] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
+    const wrapperRef = useRef<HTMLElement | null>(null)
+    // Guards commitEdit against double-fire when explicit commit (Enter/Tab) is
+    // followed by the input's onBlur during the same event tick.
+    const committingRef = useRef(false)
+
+    const useRegistry = !!(keyboard && rowId && cellKey)
+
+    // Extract register so the effect depends on the stable useCallback identity,
+    // not the (unstable) parent `keyboard` object literal returned each render.
+    const register = keyboard?.register
+
+    // Register on mount when on the registry path
+    useEffect(() => {
+        if (!useRegistry || !register) return
+        return register({ rowId: rowId!, cellKey: cellKey!, ref: wrapperRef })
+    }, [useRegistry, register, rowId, cellKey])
+
+    // Focus state — from registry when wired, else from legacy `focused` prop
+    const cellFocused = useRegistry ? keyboard!.isFocused(rowId!, cellKey!) : focused
+    const effectiveEditTrigger = useRegistry
+        ? (cellFocused ? keyboard!.editTrigger : 0)
+        : requestEdit
+    const effectiveClearTrigger = useRegistry
+        ? (cellFocused ? keyboard!.clearTrigger : 0)
+        : requestClear
+    const effectiveEditInitialValue = useRegistry
+        ? (cellFocused ? keyboard!.editInitialValue : undefined)
+        : editInitialValue
 
     const startEdit = (initialValue?: string) => {
+        committingRef.current = false
         setEditValue(initialValue ?? value?.toString() ?? '')
         setIsEditing(true)
     }
@@ -96,6 +140,15 @@ const EditableCell = ({
     }, [isEditing])
 
     const commitEdit = () => {
+        // Re-entrancy guard: explicit commit paths (Enter/Tab) call commitEdit
+        // and then move DOM focus, which triggers the input's onBlur → another
+        // commitEdit on the same tick. Short-circuit the second call.
+        if (committingRef.current) return
+        committingRef.current = true
+        // Snapshot whether the input still owns DOM focus. If a navigate
+        // already moved focus away (Tab/Enter then a sibling Tab stop), we
+        // must NOT steal it back to this wrapper.
+        const inputStillFocused = document.activeElement === inputRef.current
         setIsEditing(false)
         let newValue: number | string | null = editValue
 
@@ -116,22 +169,45 @@ const EditableCell = ({
         if (newValue != value) {
             onChange(newValue)
         }
+
+        // On the registry path, hand focus back to the wrapper so the cell
+        // stays in the tab chain after the input unmounts. Skip when focus
+        // already left the input (e.g. a follow-up navigate moved it).
+        if (useRegistry && inputStillFocused) {
+            wrapperRef.current?.focus()
+        }
     }
 
     const cancelEdit = () => {
+        // Block the imminent onBlur from re-running commitEdit and clobbering
+        // the cancelled value.
+        committingRef.current = true
         setIsEditing(false)
         setEditValue('')
     }
+
+    const goNavigate = (direction: 'up' | 'down' | 'left' | 'right') => {
+        if (useRegistry) keyboard!.navigate(direction)
+        else onNavigate?.(direction)
+    }
+
+    const hasNavTarget = useRegistry || !!onNavigate
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             e.preventDefault()
             commitEdit()
-            onNavigate?.('down')
+            goNavigate('down')
         } else if (e.key === 'Tab') {
-            e.preventDefault()
-            commitEdit()
-            onNavigate?.(e.shiftKey ? 'left' : 'right')
+            if (hasNavTarget) {
+                e.preventDefault()
+                commitEdit()
+                goNavigate(e.shiftKey ? 'left' : 'right')
+            }
+            // else: no grid wiring and no legacy navigate prop. Let native Tab
+            // move focus while the input is still mounted (so the browser picks
+            // the correct next tabbable); the input's onBlur fires commitEdit
+            // after focus has left. FinalResults relies on this.
         } else if (e.key === 'Escape') {
             cancelEdit()
         }
@@ -166,39 +242,48 @@ const EditableCell = ({
 
     // Trigger edit externally (keyboard Enter/F2 or type-to-edit)
     useEffect(() => {
-        if (requestEdit > 0 && !isEditing) {
-            startEdit(editInitialValue ?? undefined)
+        if (effectiveEditTrigger > 0 && !isEditing) {
+            startEdit(effectiveEditInitialValue ?? undefined)
         }
-    }, [requestEdit])
+    }, [effectiveEditTrigger])
 
     // Trigger clear externally (keyboard Delete/Backspace)
     useEffect(() => {
-        if (requestClear > 0) {
+        if (effectiveClearTrigger > 0) {
             onChange(null)
         }
-    }, [requestClear])
+    }, [effectiveClearTrigger])
 
     // Click to select (focus ring only), double-click to edit
     const handleClick = () => {
         if (!isEditing) {
-            onCellFocus?.()
+            if (useRegistry) keyboard!.focus(rowId!, cellKey!)
+            else onCellFocus?.()
         }
     }
 
     const handleDoubleClick = () => {
         if (!isEditing) {
-            onCellFocus?.()
+            if (useRegistry) keyboard!.focus(rowId!, cellKey!)
+            else onCellFocus?.()
             startEdit()
         }
     }
 
-    const focusRing = focused && !isEditing ? 'ring-2 ring-brand ring-inset' : ''
+    const focusRing = cellFocused && !isEditing ? 'ring-2 ring-brand ring-inset' : ''
 
     return (
         <Wrapper
-            className={`${T.cellEdit} cursor-pointer ${focusRing} ${className}`}
+            ref={useRegistry ? (wrapperRef as React.RefObject<HTMLTableCellElement & HTMLDivElement>) : undefined}
+            tabIndex={useRegistry ? 0 : undefined}
+            className={`${T.cellEdit} cursor-pointer ${focusRing} ${useRegistry ? 'outline-none' : ''} ${className}`}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
+            // Seed logical focus when the wrapper receives DOM focus (native Tab
+            // from outside the table, or any focus() call). Without this the
+            // container's keyboard handler short-circuits on `!focusedCell` and
+            // arrow/Enter/type-to-edit are silently dropped.
+            onFocus={useRegistry ? () => keyboard!.focus(rowId!, cellKey!) : undefined}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >

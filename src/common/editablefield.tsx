@@ -14,6 +14,7 @@
  */
 
 import { useState, useRef, useEffect, type ReactNode } from 'react'
+import type { GridKeyboard } from './usegridkeyboard'
 
 interface EditableFieldProps {
     /** Current value of the editable field */
@@ -37,6 +38,12 @@ interface EditableFieldProps {
     width?: string
     /** Extra Tailwind classes */
     className?: string
+    /** Registry-path keyboard binding. When `keyboard`, `rowId`, and `cellKey` are
+     *  all supplied, the outer wrapper registers a tab stop and Tab routes through
+     *  `keyboard.navigate(...)`. Without it, Tab is handled natively. */
+    keyboard?: GridKeyboard
+    rowId?: string
+    cellKey?: string
 }
 
 export default function EditableField({
@@ -51,26 +58,73 @@ export default function EditableField({
     originClass,
     width,
     className = '',
+    keyboard,
+    rowId,
+    cellKey,
 }: EditableFieldProps) {
     const [isEditing, setIsEditing] = useState(false)
     const [editValue, setEditValue] = useState('')
     const inputRef = useRef<HTMLInputElement>(null)
+    const wrapperRef = useRef<HTMLDivElement | null>(null)
+    // Guards commitEdit against double-fire — see EditableCell for context.
+    const committingRef = useRef(false)
+
+    const useRegistry = !!(keyboard && rowId && cellKey)
+
+    // Stable register reference (useCallback([]) inside the hook), so the effect
+    // doesn't churn when the parent re-renders.
+    const register = keyboard?.register
+
+    useEffect(() => {
+        if (!useRegistry || !register) return
+        return register({
+            rowId: rowId!,
+            cellKey: cellKey!,
+            ref: wrapperRef as React.RefObject<HTMLElement | null>,
+        })
+    }, [useRegistry, register, rowId, cellKey])
+
+    // Container handles arrow/Enter/F2/type-to-edit by incrementing editTrigger
+    // on the focused cell. Without this consumer the field wrapper would catch
+    // Tab focus but be a no-op for Enter/F2/printable keys.
+    const cellFocused = useRegistry ? keyboard!.isFocused(rowId!, cellKey!) : false
+    const effectiveEditTrigger = useRegistry && cellFocused ? keyboard!.editTrigger : 0
+    const effectiveEditInitialValue = useRegistry && cellFocused ? keyboard!.editInitialValue : undefined
 
     const hidden = defaultValue != null && value === defaultValue
 
-    const startEdit = () => {
-        setEditValue(value?.toString() ?? '')
+    const startEdit = (initialValue?: string) => {
+        committingRef.current = false
+        setEditValue(initialValue ?? value?.toString() ?? '')
         setIsEditing(true)
     }
 
     useEffect(() => {
+        if (effectiveEditTrigger > 0 && !isEditing) {
+            startEdit(effectiveEditInitialValue ?? undefined)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [effectiveEditTrigger])
+
+    useEffect(() => {
         if (isEditing && inputRef.current) {
             inputRef.current.focus()
-            inputRef.current.select()
+            // Type-to-edit puts a single char into the input — cursor at end.
+            // Click/F2 puts the existing value in — select all for overwrite.
+            if (editValue.length <= 1) {
+                const len = inputRef.current.value.length
+                inputRef.current.setSelectionRange(len, len)
+            } else {
+                inputRef.current.select()
+            }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isEditing])
 
     const commitEdit = () => {
+        if (committingRef.current) return
+        committingRef.current = true
+        const inputStillFocused = document.activeElement === inputRef.current
         setIsEditing(false)
         const parsed = type === 'percent'
             ? parseFloat(editValue)
@@ -79,27 +133,49 @@ export default function EditableField({
             const clamped = Math.max(min, Math.min(max, Math.round(parsed)))
             if (clamped !== value) onChange(clamped)
         }
+        // Keep focus on the cell in the tab chain after the input unmounts;
+        // navigate() in the caller may immediately move it elsewhere.
+        if (useRegistry && inputStillFocused) {
+            wrapperRef.current?.focus()
+        }
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === 'Tab') {
+        if (e.key === 'Enter') {
             e.preventDefault()
             commitEdit()
+            if (useRegistry) keyboard!.navigate('down')
+        } else if (e.key === 'Tab') {
+            if (useRegistry) {
+                e.preventDefault()
+                commitEdit()
+                keyboard!.navigate(e.shiftKey ? 'left' : 'right')
+            }
+            // else: native Tab — let the browser move focus; onBlur fires commitEdit.
         } else if (e.key === 'Escape') {
+            committingRef.current = true
             setIsEditing(false)
         }
     }
 
     const handleClick = () => {
-        if (!isEditing) startEdit()
+        if (!isEditing) {
+            if (useRegistry) keyboard!.focus(rowId!, cellKey!)
+            startEdit()
+        }
     }
 
     return (
         <div
+            ref={useRegistry ? wrapperRef : undefined}
+            tabIndex={useRegistry ? 0 : undefined}
             className={`group/field flex items-center gap-1.5 rounded-md cursor-pointer
-                hover:bg-surface-1/60 transition-colors ${className}`}
+                hover:bg-surface-1/60 transition-colors ${useRegistry ? 'outline-none' : ''} ${className}`}
             style={width ? { width } : undefined}
             onClick={handleClick}
+            // Seed logical focus so the container catches Enter/F2/printable
+            // keys for this cell after a native Tab into the wrapper.
+            onFocus={useRegistry ? () => keyboard!.focus(rowId!, cellKey!) : undefined}
         >
             {/* DIRECTIVE: bg-blue-50/50 is the signature light-blue pill color — do not remove or change */}
             <div className={`

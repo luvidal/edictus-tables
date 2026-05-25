@@ -1,82 +1,170 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 export interface GridFocusedCell {
     rowId: string
-    colIndex: number
+    cellKey: string
+}
+
+export interface GridStop {
+    rowId: string
+    cellKey: string
+    ref: React.RefObject<HTMLElement | null>
 }
 
 interface UseGridKeyboardProps {
     /** Ordered list of visible row IDs */
     visibleRowIds: string[]
-    /** Number of navigable columns */
-    colCount: number
 }
 
-export const useGridKeyboard = ({ visibleRowIds, colCount }: UseGridKeyboardProps) => {
+export interface GridKeyboard {
+    focusedCell: GridFocusedCell | null
+    editTrigger: number
+    clearTrigger: number
+    editInitialValue: string | null
+    isFocused: (rowId: string, cellKey: string) => boolean
+    focus: (rowId: string, cellKey: string) => void
+    clearFocus: () => void
+    navigate: (direction: 'up' | 'down' | 'left' | 'right') => void
+    register: (stop: GridStop) => () => void
+    handleContainerKeyDown: (e: React.KeyboardEvent) => void
+}
+
+export const useGridKeyboard = ({ visibleRowIds }: UseGridKeyboardProps): GridKeyboard => {
     const [focusedCell, setFocusedCell] = useState<GridFocusedCell | null>(null)
     const [editTrigger, setEditTrigger] = useState(0)
     const [clearTrigger, setClearTrigger] = useState(0)
     const [editInitialValue, setEditInitialValue] = useState<string | null>(null)
 
-    const isFocused = useCallback((rowId: string, colIndex: number) => {
-        return focusedCell?.rowId === rowId && focusedCell?.colIndex === colIndex
+    const focusedCellRef = useRef(focusedCell)
+    useEffect(() => { focusedCellRef.current = focusedCell }, [focusedCell])
+
+    const visibleRowIdsRef = useRef(visibleRowIds)
+    useEffect(() => { visibleRowIdsRef.current = visibleRowIds }, [visibleRowIds])
+
+    // Per-row registry of focusable stops. Order resolved at navigate-time via
+    // compareDocumentPosition so visibility flips don't scramble traversal.
+    const registryRef = useRef<Map<string, GridStop[]>>(new Map())
+
+    const register = useCallback((stop: GridStop) => {
+        const list = registryRef.current.get(stop.rowId)
+        if (list) {
+            // Dev-only warning: two cells colliding on (rowId, cellKey) means
+            // `findIndex(s => s.cellKey === cur.cellKey)` will only ever resolve
+            // to the first one — the second is in the DOM tab chain but
+            // unreachable via cellKey-based navigation. Usually a column-config
+            // typo. Skip in production to avoid console noise.
+            if (process.env.NODE_ENV !== 'production' && list.some(s => s.cellKey === stop.cellKey)) {
+                console.warn(
+                    `[useGridKeyboard] Duplicate stop registration: rowId="${stop.rowId}" cellKey="${stop.cellKey}". ` +
+                    `Only the first stop is reachable via cellKey lookups (arrow up/down, focus()). ` +
+                    `Check for a repeated column key or a stale registration.`,
+                )
+            }
+            list.push(stop)
+        } else {
+            registryRef.current.set(stop.rowId, [stop])
+        }
+        return () => {
+            const cur = registryRef.current.get(stop.rowId)
+            if (!cur) return
+            const next = cur.filter(s => s !== stop)
+            if (next.length === 0) registryRef.current.delete(stop.rowId)
+            else registryRef.current.set(stop.rowId, next)
+        }
+    }, [])
+
+    const getOrderedStops = useCallback((rowId: string): GridStop[] => {
+        const list = registryRef.current.get(rowId)
+        if (!list || list.length === 0) return []
+        const alive = list.filter(s => s.ref.current != null)
+        alive.sort((a, b) => {
+            const ar = a.ref.current!
+            const br = b.ref.current!
+            if (ar === br) return 0
+            const pos = ar.compareDocumentPosition(br)
+            if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1
+            if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1
+            return 0
+        })
+        return alive
+    }, [])
+
+    const isFocused = useCallback((rowId: string, cellKey: string) => {
+        return focusedCell?.rowId === rowId && focusedCell?.cellKey === cellKey
     }, [focusedCell])
 
-    const focus = useCallback((rowId: string, colIndex: number) => {
-        setFocusedCell({ rowId, colIndex })
+    const focus = useCallback((rowId: string, cellKey: string) => {
+        setFocusedCell({ rowId, cellKey })
     }, [])
 
     const clearFocus = useCallback(() => setFocusedCell(null), [])
 
-    /** Move focus in a direction, wrapping at row boundaries */
+    const focusStop = useCallback((stop: GridStop) => {
+        stop.ref.current?.focus()
+        setFocusedCell({ rowId: stop.rowId, cellKey: stop.cellKey })
+    }, [])
+
     const navigate = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
-        setFocusedCell(prev => {
-            if (!prev) return null
-            const rowIdx = visibleRowIds.indexOf(prev.rowId)
-            if (rowIdx === -1) return null
+        const cur = focusedCellRef.current
+        if (!cur) return
+        const rowIds = visibleRowIdsRef.current
+        const rowIdx = rowIds.indexOf(cur.rowId)
+        if (rowIdx === -1) return
 
-            let newRow = rowIdx
-            let newCol = prev.colIndex
+        const stops = getOrderedStops(cur.rowId)
+        const colIdx = stops.findIndex(s => s.cellKey === cur.cellKey)
 
-            switch (direction) {
-                case 'right':
-                    if (newCol < colCount - 1) {
-                        newCol++
-                    } else if (newRow < visibleRowIds.length - 1) {
-                        newRow++
-                        newCol = 0
+        switch (direction) {
+            case 'right': {
+                if (colIdx >= 0 && colIdx < stops.length - 1) {
+                    focusStop(stops[colIdx + 1])
+                } else {
+                    // wrap to first stop of the next row that has any stops
+                    for (let i = rowIdx + 1; i < rowIds.length; i++) {
+                        const next = getOrderedStops(rowIds[i])
+                        if (next.length > 0) { focusStop(next[0]); break }
                     }
-                    break
-                case 'left':
-                    if (newCol > 0) {
-                        newCol--
-                    } else if (newRow > 0) {
-                        newRow--
-                        newCol = colCount - 1
-                    }
-                    break
-                case 'down':
-                    if (newRow < visibleRowIds.length - 1) newRow++
-                    break
-                case 'up':
-                    if (newRow > 0) newRow--
-                    break
+                }
+                break
             }
-
-            return { rowId: visibleRowIds[newRow], colIndex: newCol }
-        })
-    }, [visibleRowIds, colCount])
-
-    /** Navigate and immediately trigger edit on the destination cell */
-    const navigateAndEdit = useCallback((direction: 'up' | 'down' | 'left' | 'right') => {
-        navigate(direction)
-        setEditInitialValue(null)
-        setTimeout(() => setEditTrigger(prev => prev + 1), 0)
-    }, [navigate])
+            case 'left': {
+                if (colIdx > 0) {
+                    focusStop(stops[colIdx - 1])
+                } else {
+                    for (let i = rowIdx - 1; i >= 0; i--) {
+                        const prev = getOrderedStops(rowIds[i])
+                        if (prev.length > 0) { focusStop(prev[prev.length - 1]); break }
+                    }
+                }
+                break
+            }
+            case 'down': {
+                // Same cellKey in the next row that registers it, else stay.
+                for (let i = rowIdx + 1; i < rowIds.length; i++) {
+                    const next = getOrderedStops(rowIds[i])
+                    if (next.length === 0) continue
+                    const same = next.find(s => s.cellKey === cur.cellKey)
+                    if (same) focusStop(same)
+                    return
+                }
+                break
+            }
+            case 'up': {
+                for (let i = rowIdx - 1; i >= 0; i--) {
+                    const prev = getOrderedStops(rowIds[i])
+                    if (prev.length === 0) continue
+                    const same = prev.find(s => s.cellKey === cur.cellKey)
+                    if (same) focusStop(same)
+                    return
+                }
+                break
+            }
+        }
+    }, [focusStop, getOrderedStops])
 
     /** Handle keydown on the table container (for arrow keys when not editing) */
     const handleContainerKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (!focusedCell) return
+        if (!focusedCellRef.current) return
 
         const target = e.target as HTMLElement
         if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
@@ -126,7 +214,7 @@ export const useGridKeyboard = ({ visibleRowIds, colCount }: UseGridKeyboardProp
                 }
                 break
         }
-    }, [focusedCell, navigate, clearFocus])
+    }, [navigate, clearFocus])
 
     return {
         focusedCell,
@@ -137,7 +225,7 @@ export const useGridKeyboard = ({ visibleRowIds, colCount }: UseGridKeyboardProp
         focus,
         clearFocus,
         navigate,
-        navigateAndEdit,
+        register,
         handleContainerKeyDown,
     }
 }

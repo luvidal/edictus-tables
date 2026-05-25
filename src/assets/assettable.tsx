@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { Trash2 } from 'lucide-react'
 import EditableCell from '../common/editablecell'
 import EditableField from '../common/editablefield'
+import GridTextInput from '../common/gridtextinput'
 import RowToolbar from '../common/rowtoolbar'
 import { T } from '../common/styles'
 import { resolveColors } from '../common/colors'
@@ -17,6 +18,8 @@ import RecycleBin from '../common/recyclebin'
 import ClickableHeader from '../common/clickableheader'
 import { ORIGIN_CLASSES } from '../common/cellorigin'
 import type { AssetRow, AssetTableProps, ColumnDef } from './types'
+
+const ADD_ROW_ID = '__add__'
 
 function AssetTable<T extends AssetRow>({
     columns,
@@ -70,20 +73,13 @@ function AssetTable<T extends AssetRow>({
         })
     }, [columns, toggledCols])
 
-    // Build keyboard position map: field key → position index (compound columns get 2 positions)
-    const { keyToPosition, kbColCount } = useMemo(() => {
-        const map: Record<string, number> = {}
-        let pos = 0
-        for (const col of resolvedColumns) {
-            if (col.type === 'text') continue
-            map[col.key] = pos++
-            if (col.compound) map[col.compound.key] = pos++
-        }
-        return { keyToPosition: map, kbColCount: pos }
-    }, [resolvedColumns])
-
-    const visibleRowIds = useMemo(() => activeRows.map(r => r.id), [activeRows])
-    const keyboard = useGridKeyboard({ visibleRowIds, colCount: kbColCount })
+    // Append a synthetic add-row id so Tab from the last data row's last cell
+    // walks into the add row's first input.
+    const visibleRowIds = useMemo(
+        () => [...activeRows.map(r => r.id), ADD_ROW_ID],
+        [activeRows],
+    )
+    const keyboard = useGridKeyboard({ visibleRowIds })
 
     const labelCol = resolvedColumns.find(c => c.isLabel) || resolvedColumns[0]
 
@@ -164,20 +160,6 @@ function AssetTable<T extends AssetRow>({
     const cellOrigin = (row: T, key: string, col: ColumnDef): string | undefined => {
         if (col.autoComputedClass?.(row)) return ORIGIN_CLASSES.calculated
         return getCellOriginClass?.(row.id, key)
-    }
-
-    const kbProps = (rowId: string, key: string) => {
-        const pos = keyToPosition[key]
-        if (pos === undefined) return {}
-        const focused = keyboard.isFocused(rowId, pos)
-        return {
-            focused,
-            onCellFocus: () => keyboard.focus(rowId, pos),
-            onNavigate: keyboard.navigate,
-            requestEdit: focused ? keyboard.editTrigger : 0,
-            requestClear: focused ? keyboard.clearTrigger : 0,
-            editInitialValue: focused ? keyboard.editInitialValue : undefined,
-        }
     }
 
     // --- Render ---
@@ -348,10 +330,12 @@ function AssetTable<T extends AssetRow>({
                                                 onViewSource={onViewSource}
                                             />
                                             <div className="flex items-center gap-0.5 min-w-0">
-                                                <input
-                                                    type="text"
+                                                <GridTextInput
+                                                    keyboard={keyboard}
+                                                    rowId={row.id}
+                                                    cellKey={col.key}
                                                     value={(row[col.key] as string) || ''}
-                                                    onChange={e => updateField(row.id, col.key, e.target.value)}
+                                                    onChange={v => updateField(row.id, col.key, v)}
                                                     className={`flex-1 min-w-0 ${T.inputLabel} !p-0 ${getCellOriginClass?.(row.id, col.key) || ''}`}
                                                     placeholder={col.placeholder || col.label}
                                                 />
@@ -362,15 +346,37 @@ function AssetTable<T extends AssetRow>({
 
                                 // --- Text column ---
                                 if (col.type === 'text') {
+                                    // Honor per-row visibility/readOnly predicates before
+                                    // rendering the input — otherwise hidden/read-only text
+                                    // columns would still register a tab stop.
+                                    if (col.visible && !col.visible(row)) {
+                                        return (
+                                            <td key={col.key} className={`${T.cellEdit} text-center ${vline}`}>
+                                                <span className="text-[11px] text-ink-tertiary/60">—</span>
+                                            </td>
+                                        )
+                                    }
+                                    if (col.readOnly?.(row)) {
+                                        const v = (row[col.key] as string) || ''
+                                        return (
+                                            <td key={col.key} className={`${T.cellEdit} ${vline}`}>
+                                                <div className={`text-xs ${getCellOriginClass?.(row.id, col.key) || 'text-ink-primary'}`}>
+                                                    {v || '—'}
+                                                </div>
+                                            </td>
+                                        )
+                                    }
                                     const isRight = col.align === 'right'
                                     const isCenter = col.align === 'center'
                                     const textAlign = isRight ? 'text-right' : isCenter ? 'text-center' : 'text-left'
                                     return (
                                         <td key={col.key} className={`${T.cellEdit} ${vline}`}>
-                                            <input
-                                                type="text"
+                                            <GridTextInput
+                                                keyboard={keyboard}
+                                                rowId={row.id}
+                                                cellKey={col.key}
                                                 value={(row[col.key] as string) || ''}
-                                                onChange={e => updateField(row.id, col.key, e.target.value)}
+                                                onChange={v => updateField(row.id, col.key, v)}
                                                 className={`w-full ${T.input} ${textAlign} ${!isRight && !isCenter ? 'pl-1' : ''} ${getCellOriginClass?.(row.id, col.key) || ''}`}
                                                 style={isRight || isCenter ? { padding: 0 } : undefined}
                                                 placeholder={col.placeholder || col.label}
@@ -410,6 +416,9 @@ function AssetTable<T extends AssetRow>({
                                                     max={f.max ?? 99}
                                                     originClass={cellOrigin(row, f.key, col)}
                                                     className={alignCls}
+                                                    keyboard={keyboard}
+                                                    rowId={row.id}
+                                                    cellKey={f.key}
                                                 />
                                             </td>
                                         )
@@ -438,7 +447,9 @@ function AssetTable<T extends AssetRow>({
                                                     align="center"
                                                     originClass={cellOrigin(row, col.key, col)}
                                                     asDiv
-                                                    {...kbProps(row.id, col.key)}
+                                                    keyboard={keyboard}
+                                                    rowId={row.id}
+                                                    cellKey={col.key}
                                                 />
                                                 <span className="text-ink-tertiary">{sep}</span>
                                                 <EditableCell
@@ -449,7 +460,9 @@ function AssetTable<T extends AssetRow>({
                                                     align="center"
                                                     originClass={cellOrigin(row, col.compound.key, col)}
                                                     asDiv
-                                                    {...kbProps(row.id, col.compound.key)}
+                                                    keyboard={keyboard}
+                                                    rowId={row.id}
+                                                    cellKey={col.compound.key}
                                                 />
                                             </div>
                                         </td>
@@ -470,7 +483,9 @@ function AssetTable<T extends AssetRow>({
                                             align={col.align || 'center'}
                                             className={vline}
                                             originClass={cellOrigin(row, col.key, col)}
-                                            {...kbProps(row.id, col.key)}
+                                            keyboard={keyboard}
+                                            rowId={row.id}
+                                            cellKey={col.key}
                                         />
                                     )
                                 }
@@ -492,7 +507,9 @@ function AssetTable<T extends AssetRow>({
                                                 originClass={cellOrigin(row, col.key, col)}
                                                 onViewSource={cellViewSource}
                                                 asDiv
-                                                {...kbProps(row.id, col.key)}
+                                                keyboard={keyboard}
+                                                rowId={row.id}
+                                                cellKey={col.key}
                                             />
                                         </td>
                                     )
@@ -508,7 +525,9 @@ function AssetTable<T extends AssetRow>({
                                         className={vline}
                                         originClass={cellOrigin(row, col.key, col)}
                                         onViewSource={cellViewSource}
-                                        {...kbProps(row.id, col.key)}
+                                        keyboard={keyboard}
+                                        rowId={row.id}
+                                        cellKey={col.key}
                                     />
                                 )
                             })}
@@ -524,15 +543,15 @@ function AssetTable<T extends AssetRow>({
                         if (col.isLabel) {
                             return (
                                 <td key={col.key} className={`${T.cellEdit} ${vline}`}>
-                                    <input
-                                        type="text"
-                                        placeholder={addPlaceholder || `Agregar...`}
+                                    <GridTextInput
+                                        keyboard={keyboard}
+                                        rowId={ADD_ROW_ID}
+                                        cellKey={col.key}
                                         value={newRowValues[col.key] || ''}
-                                        onChange={e => setNewRowValues(prev => ({ ...prev, [col.key]: e.target.value }))}
+                                        onChange={v => setNewRowValues(prev => ({ ...prev, [col.key]: v }))}
+                                        placeholder={addPlaceholder || `Agregar...`}
                                         className={`w-full ${T.inputPlaceholder}`}
-                                        onKeyDown={e => {
-                                            if (e.key === 'Enter' && (newRowValues[col.key] || '').trim()) addRow()
-                                        }}
+                                        onEnter={() => { if ((newRowValues[col.key] || '').trim()) addRow() }}
                                     />
                                 </td>
                             )
@@ -543,11 +562,13 @@ function AssetTable<T extends AssetRow>({
                             const addTextAlign = isAddRight ? 'text-right' : isAddCenter ? 'text-center' : 'text-left'
                             return (
                                 <td key={col.key} className={`${T.cellEdit} ${vline}`}>
-                                    <input
-                                        type="text"
-                                        placeholder={col.placeholder || col.label}
+                                    <GridTextInput
+                                        keyboard={keyboard}
+                                        rowId={ADD_ROW_ID}
+                                        cellKey={col.key}
                                         value={newRowValues[col.key] || ''}
-                                        onChange={e => setNewRowValues(prev => ({ ...prev, [col.key]: e.target.value }))}
+                                        onChange={v => setNewRowValues(prev => ({ ...prev, [col.key]: v }))}
+                                        placeholder={col.placeholder || col.label}
                                         className={`w-full ${T.inputPlaceholder} ${addTextAlign}`}
                                         style={isAddRight || isAddCenter ? { padding: 0 } : undefined}
                                     />
@@ -566,6 +587,9 @@ function AssetTable<T extends AssetRow>({
                                 hasData={false}
                                 align={col.align}
                                 className={vline}
+                                keyboard={keyboard}
+                                rowId={ADD_ROW_ID}
+                                cellKey={col.key}
                             />
                         )
                     })}

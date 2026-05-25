@@ -57,24 +57,12 @@ const BalanceTable = ({
     const { getHoverProps } = useRowHover()
 
     const rowIds = rows.map(r => r.id)
-    const keyboard = useGridKeyboard({ visibleRowIds: rowIds, colCount: 7 })
+    const keyboard = useGridKeyboard({ visibleRowIds: rowIds })
 
     const handleChange = (rowIdx: number, key: keyof BalanceRow, value: number | string | null) => {
         const updated = [...rows]
         updated[rowIdx] = { ...updated[rowIdx], [key]: value }
         onRowsChange(updated)
-    }
-
-    const currencyColIndex = (key: keyof BalanceRow): number => {
-        switch (key) {
-            case 'total_activos': return 0
-            case 'total_pasivos': return 1
-            case 'patrimonio': return 2
-            case 'total_ingresos': return 3
-            case 'total_gastos': return 4
-            case 'resultado': return 5
-            default: return -1
-        }
     }
 
     if (rows.length === 0) {
@@ -178,7 +166,6 @@ const BalanceTable = ({
                                     </td>
                                     {CURRENCY_KEYS.map(key => {
                                         const val = row[key] as number | null
-                                        const colIdx = currencyColIndex(key)
                                         const isNeg = typeof val === 'number' && val < 0
                                         const isBold = key === 'patrimonio' || key === 'resultado'
                                         const isLast = key === 'resultado'
@@ -191,12 +178,9 @@ const BalanceTable = ({
                                                 hasData={val != null}
                                                 className={`${!isLast ? T.vline : ''} ${isNeg ? 'text-status-pending' : ''} ${isBold ? 'font-semibold' : ''}`}
                                                 originClass={getCellOriginClass?.(row.id, key as string)}
-                                                focused={keyboard.isFocused(row.id, colIdx)}
-                                                onCellFocus={() => keyboard.focus(row.id, colIdx)}
-                                                onNavigate={keyboard.navigate}
-                                                requestEdit={keyboard.isFocused(row.id, colIdx) ? keyboard.editTrigger : 0}
-                                                requestClear={keyboard.isFocused(row.id, colIdx) ? keyboard.clearTrigger : 0}
-                                                editInitialValue={keyboard.isFocused(row.id, colIdx) ? keyboard.editInitialValue : undefined}
+                                                keyboard={keyboard}
+                                                rowId={row.id}
+                                                cellKey={key as string}
                                             />
                                         )
                                     })}
@@ -213,6 +197,9 @@ const BalanceTable = ({
                                                 type="percent"
                                                 symbol="%"
                                                 originClass={getCellOriginClass?.(row.id, 'participacion')}
+                                                keyboard={keyboard}
+                                                rowId={row.id}
+                                                cellKey="participacion"
                                             />
                                         </div>
                                     </td>

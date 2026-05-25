@@ -407,11 +407,31 @@ interface GridStop {
     cellKey: string;
     ref: React.RefObject<HTMLElement | null>;
 }
+/**
+ * A request to start editing a specific cell. `n` is a monotonic counter so
+ * consumers can distinguish "second Enter on the same cell" from the first.
+ * Scoping by (rowId, cellKey) prevents the request from being consumed by a
+ * cell that wasn't the user's target — see the `editTrigger` regression where
+ * tabbing into a sibling cell whose `effectiveEditTrigger` snapped 0→N caused
+ * unintended edits / data loss.
+ */
+interface GridEditRequest {
+    rowId: string;
+    cellKey: string;
+    initialValue: string | null;
+    n: number;
+}
+interface GridClearRequest {
+    rowId: string;
+    cellKey: string;
+    n: number;
+}
 interface GridKeyboard {
     focusedCell: GridFocusedCell | null;
-    editTrigger: number;
-    clearTrigger: number;
-    editInitialValue: string | null;
+    /** Cell-scoped edit request — `null` until the user triggers an edit. */
+    editRequest: GridEditRequest | null;
+    /** Cell-scoped clear request — `null` until the user presses Delete/Backspace. */
+    clearRequest: GridClearRequest | null;
     isFocused: (rowId: string, cellKey: string) => boolean;
     focus: (rowId: string, cellKey: string) => void;
     clearFocus: () => void;

@@ -16,11 +16,33 @@ interface UseGridKeyboardProps {
     visibleRowIds: string[]
 }
 
+/**
+ * A request to start editing a specific cell. `n` is a monotonic counter so
+ * consumers can distinguish "second Enter on the same cell" from the first.
+ * Scoping by (rowId, cellKey) prevents the request from being consumed by a
+ * cell that wasn't the user's target — see the `editTrigger` regression where
+ * tabbing into a sibling cell whose `effectiveEditTrigger` snapped 0→N caused
+ * unintended edits / data loss.
+ */
+export interface GridEditRequest {
+    rowId: string
+    cellKey: string
+    initialValue: string | null
+    n: number
+}
+
+export interface GridClearRequest {
+    rowId: string
+    cellKey: string
+    n: number
+}
+
 export interface GridKeyboard {
     focusedCell: GridFocusedCell | null
-    editTrigger: number
-    clearTrigger: number
-    editInitialValue: string | null
+    /** Cell-scoped edit request — `null` until the user triggers an edit. */
+    editRequest: GridEditRequest | null
+    /** Cell-scoped clear request — `null` until the user presses Delete/Backspace. */
+    clearRequest: GridClearRequest | null
     isFocused: (rowId: string, cellKey: string) => boolean
     focus: (rowId: string, cellKey: string) => void
     clearFocus: () => void
@@ -31,9 +53,8 @@ export interface GridKeyboard {
 
 export const useGridKeyboard = ({ visibleRowIds }: UseGridKeyboardProps): GridKeyboard => {
     const [focusedCell, setFocusedCell] = useState<GridFocusedCell | null>(null)
-    const [editTrigger, setEditTrigger] = useState(0)
-    const [clearTrigger, setClearTrigger] = useState(0)
-    const [editInitialValue, setEditInitialValue] = useState<string | null>(null)
+    const [editRequest, setEditRequest] = useState<GridEditRequest | null>(null)
+    const [clearRequest, setClearRequest] = useState<GridClearRequest | null>(null)
 
     const focusedCellRef = useRef(focusedCell)
     useEffect(() => { focusedCellRef.current = focusedCell }, [focusedCell])
@@ -191,36 +212,56 @@ export const useGridKeyboard = ({ visibleRowIds }: UseGridKeyboardProps): GridKe
                 navigate(e.shiftKey ? 'left' : 'right')
                 break
             case 'Enter':
-            case 'F2':
+            case 'F2': {
                 e.preventDefault()
-                setEditInitialValue(null)
-                setEditTrigger(prev => prev + 1)
+                const cur = focusedCellRef.current
+                if (!cur) return
+                setEditRequest(prev => ({
+                    rowId: cur.rowId,
+                    cellKey: cur.cellKey,
+                    initialValue: null,
+                    n: (prev?.n ?? 0) + 1,
+                }))
                 break
+            }
             case 'Delete':
-            case 'Backspace':
+            case 'Backspace': {
                 e.preventDefault()
-                setClearTrigger(prev => prev + 1)
+                const cur = focusedCellRef.current
+                if (!cur) return
+                setClearRequest(prev => ({
+                    rowId: cur.rowId,
+                    cellKey: cur.cellKey,
+                    n: (prev?.n ?? 0) + 1,
+                }))
                 break
+            }
             case 'Escape':
                 e.preventDefault()
                 clearFocus()
                 break
-            default:
+            default: {
                 // Type-to-edit: single printable character starts editing with that char
                 if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
                     e.preventDefault()
-                    setEditInitialValue(e.key)
-                    setEditTrigger(prev => prev + 1)
+                    const cur = focusedCellRef.current
+                    if (!cur) return
+                    setEditRequest(prev => ({
+                        rowId: cur.rowId,
+                        cellKey: cur.cellKey,
+                        initialValue: e.key,
+                        n: (prev?.n ?? 0) + 1,
+                    }))
                 }
                 break
+            }
         }
     }, [navigate, clearFocus])
 
     return {
         focusedCell,
-        editTrigger,
-        clearTrigger,
-        editInitialValue,
+        editRequest,
+        clearRequest,
         isFocused,
         focus,
         clearFocus,

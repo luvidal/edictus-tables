@@ -256,14 +256,13 @@ describe('useGridKeyboard', () => {
         expect(result.current.focusedCell).toEqual({ rowId: 'r1', cellKey: 'a' })
     })
 
-    it('editTrigger / clearTrigger start at 0; editInitialValue starts null', () => {
+    it('editRequest / clearRequest start as null', () => {
         const { result } = setup()
-        expect(result.current.editTrigger).toBe(0)
-        expect(result.current.clearTrigger).toBe(0)
-        expect(result.current.editInitialValue).toBeNull()
+        expect(result.current.editRequest).toBeNull()
+        expect(result.current.clearRequest).toBeNull()
     })
 
-    it('Enter on container increments editTrigger', () => {
+    it('Enter on container sets editRequest scoped to the focused cell', () => {
         const { result, register } = setup()
         register('r1', 'a')
         act(() => result.current.focus('r1', 'a'))
@@ -273,10 +272,12 @@ describe('useGridKeyboard', () => {
             preventDefault: vi.fn(),
         } as unknown as React.KeyboardEvent
         act(() => result.current.handleContainerKeyDown(e))
-        expect(result.current.editTrigger).toBe(1)
+        expect(result.current.editRequest).toEqual({
+            rowId: 'r1', cellKey: 'a', initialValue: null, n: 1,
+        })
     })
 
-    it('Delete on container increments clearTrigger', () => {
+    it('Delete on container sets clearRequest scoped to the focused cell', () => {
         const { result, register } = setup()
         register('r1', 'a')
         act(() => result.current.focus('r1', 'a'))
@@ -286,10 +287,10 @@ describe('useGridKeyboard', () => {
             preventDefault: vi.fn(),
         } as unknown as React.KeyboardEvent
         act(() => result.current.handleContainerKeyDown(e))
-        expect(result.current.clearTrigger).toBe(1)
+        expect(result.current.clearRequest).toEqual({ rowId: 'r1', cellKey: 'a', n: 1 })
     })
 
-    it('printable key on container starts edit with that character', () => {
+    it('printable key on container sets editRequest with the typed character', () => {
         const { result, register } = setup()
         register('r1', 'a')
         act(() => result.current.focus('r1', 'a'))
@@ -302,8 +303,9 @@ describe('useGridKeyboard', () => {
             altKey: false,
         } as unknown as React.KeyboardEvent
         act(() => result.current.handleContainerKeyDown(e))
-        expect(result.current.editTrigger).toBe(1)
-        expect(result.current.editInitialValue).toBe('5')
+        expect(result.current.editRequest).toEqual({
+            rowId: 'r1', cellKey: 'a', initialValue: '5', n: 1,
+        })
     })
 })
 

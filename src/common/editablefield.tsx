@@ -84,12 +84,16 @@ export default function EditableField({
         })
     }, [useRegistry, register, rowId, cellKey])
 
-    // Container handles arrow/Enter/F2/type-to-edit by incrementing editTrigger
-    // on the focused cell. Without this consumer the field wrapper would catch
-    // Tab focus but be a no-op for Enter/F2/printable keys.
+    // Container handles arrow/Enter/F2/type-to-edit by setting a cell-scoped
+    // `editRequest`. We only consume requests whose target matches THIS cell —
+    // otherwise tabbing into a sibling would inherit the previous cell's edit
+    // request and silently enter edit mode here.
     const cellFocused = useRegistry ? keyboard!.isFocused(rowId!, cellKey!) : false
-    const effectiveEditTrigger = useRegistry && cellFocused ? keyboard!.editTrigger : 0
-    const effectiveEditInitialValue = useRegistry && cellFocused ? keyboard!.editInitialValue : undefined
+    const editRequest = useRegistry ? keyboard!.editRequest : null
+    const editRequestForMe = useRegistry && editRequest
+        && editRequest.rowId === rowId && editRequest.cellKey === cellKey
+        ? editRequest
+        : null
 
     const hidden = defaultValue != null && value === defaultValue
 
@@ -100,11 +104,11 @@ export default function EditableField({
     }
 
     useEffect(() => {
-        if (effectiveEditTrigger > 0 && !isEditing) {
-            startEdit(effectiveEditInitialValue ?? undefined)
+        if (editRequestForMe && !isEditing) {
+            startEdit(editRequestForMe.initialValue ?? undefined)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [effectiveEditTrigger])
+    }, [editRequestForMe?.n])
 
     useEffect(() => {
         if (isEditing && inputRef.current) {

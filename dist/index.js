@@ -375,9 +375,10 @@ var EditableCell = ({
     return register({ rowId, cellKey, ref: wrapperRef });
   }, [useRegistry, register, rowId, cellKey]);
   const cellFocused = useRegistry ? keyboard.isFocused(rowId, cellKey) : focused;
-  const effectiveEditTrigger = useRegistry ? cellFocused ? keyboard.editTrigger : 0 : requestEdit;
-  const effectiveClearTrigger = useRegistry ? cellFocused ? keyboard.clearTrigger : 0 : requestClear;
-  const effectiveEditInitialValue = useRegistry ? cellFocused ? keyboard.editInitialValue : void 0 : editInitialValue;
+  const editRequest = useRegistry ? keyboard.editRequest : null;
+  const clearRequest = useRegistry ? keyboard.clearRequest : null;
+  const editRequestForMe = useRegistry && editRequest && editRequest.rowId === rowId && editRequest.cellKey === cellKey ? editRequest : null;
+  const clearRequestForMe = useRegistry && clearRequest && clearRequest.rowId === rowId && clearRequest.cellKey === cellKey ? clearRequest : null;
   const startEdit = (initialValue) => {
     committingRef.current = false;
     setEditValue(initialValue ?? value?.toString() ?? "");
@@ -459,15 +460,23 @@ var EditableCell = ({
   const inputAlignClass = align === "left" ? "text-left" : align === "center" ? "text-center" : "text-right";
   const Wrapper = asDiv ? "div" : "td";
   React3.useEffect(() => {
-    if (effectiveEditTrigger > 0 && !isEditing) {
-      startEdit(effectiveEditInitialValue ?? void 0);
+    if (useRegistry) {
+      if (editRequestForMe && !isEditing) {
+        startEdit(editRequestForMe.initialValue ?? void 0);
+      }
+      return;
     }
-  }, [effectiveEditTrigger]);
+    if (requestEdit > 0 && !isEditing) {
+      startEdit(editInitialValue ?? void 0);
+    }
+  }, [useRegistry ? editRequestForMe?.n : requestEdit]);
   React3.useEffect(() => {
-    if (effectiveClearTrigger > 0) {
-      onChange(null);
+    if (useRegistry) {
+      if (clearRequestForMe) onChange(null);
+      return;
     }
-  }, [effectiveClearTrigger]);
+    if (requestClear > 0) onChange(null);
+  }, [useRegistry ? clearRequestForMe?.n : requestClear]);
   const handleClick = () => {
     if (!isEditing) {
       if (useRegistry) keyboard.focus(rowId, cellKey);
@@ -1345,9 +1354,8 @@ var HeaderSelectionBar = ({ selectedCount, canGroup, monthCount, naming, onNamin
 };
 var useGridKeyboard = ({ visibleRowIds }) => {
   const [focusedCell, setFocusedCell] = React3.useState(null);
-  const [editTrigger, setEditTrigger] = React3.useState(0);
-  const [clearTrigger, setClearTrigger] = React3.useState(0);
-  const [editInitialValue, setEditInitialValue] = React3.useState(null);
+  const [editRequest, setEditRequest] = React3.useState(null);
+  const [clearRequest, setClearRequest] = React3.useState(null);
   const focusedCellRef = React3.useRef(focusedCell);
   React3.useEffect(() => {
     focusedCellRef.current = focusedCell;
@@ -1488,34 +1496,54 @@ var useGridKeyboard = ({ visibleRowIds }) => {
         navigate(e.shiftKey ? "left" : "right");
         break;
       case "Enter":
-      case "F2":
+      case "F2": {
         e.preventDefault();
-        setEditInitialValue(null);
-        setEditTrigger((prev) => prev + 1);
+        const cur = focusedCellRef.current;
+        if (!cur) return;
+        setEditRequest((prev) => ({
+          rowId: cur.rowId,
+          cellKey: cur.cellKey,
+          initialValue: null,
+          n: (prev?.n ?? 0) + 1
+        }));
         break;
+      }
       case "Delete":
-      case "Backspace":
+      case "Backspace": {
         e.preventDefault();
-        setClearTrigger((prev) => prev + 1);
+        const cur = focusedCellRef.current;
+        if (!cur) return;
+        setClearRequest((prev) => ({
+          rowId: cur.rowId,
+          cellKey: cur.cellKey,
+          n: (prev?.n ?? 0) + 1
+        }));
         break;
+      }
       case "Escape":
         e.preventDefault();
         clearFocus();
         break;
-      default:
+      default: {
         if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
           e.preventDefault();
-          setEditInitialValue(e.key);
-          setEditTrigger((prev) => prev + 1);
+          const cur = focusedCellRef.current;
+          if (!cur) return;
+          setEditRequest((prev) => ({
+            rowId: cur.rowId,
+            cellKey: cur.cellKey,
+            initialValue: e.key,
+            n: (prev?.n ?? 0) + 1
+          }));
         }
         break;
+      }
     }
   }, [navigate, clearFocus]);
   return {
     focusedCell,
-    editTrigger,
-    clearTrigger,
-    editInitialValue,
+    editRequest,
+    clearRequest,
     isFocused,
     focus,
     clearFocus,
@@ -2433,9 +2461,9 @@ function EditableField({
       ref: wrapperRef
     });
   }, [useRegistry, register, rowId, cellKey]);
-  const cellFocused = useRegistry ? keyboard.isFocused(rowId, cellKey) : false;
-  const effectiveEditTrigger = useRegistry && cellFocused ? keyboard.editTrigger : 0;
-  const effectiveEditInitialValue = useRegistry && cellFocused ? keyboard.editInitialValue : void 0;
+  useRegistry ? keyboard.isFocused(rowId, cellKey) : false;
+  const editRequest = useRegistry ? keyboard.editRequest : null;
+  const editRequestForMe = useRegistry && editRequest && editRequest.rowId === rowId && editRequest.cellKey === cellKey ? editRequest : null;
   const hidden = defaultValue != null && value === defaultValue;
   const startEdit = (initialValue) => {
     committingRef.current = false;
@@ -2443,10 +2471,10 @@ function EditableField({
     setIsEditing(true);
   };
   React3.useEffect(() => {
-    if (effectiveEditTrigger > 0 && !isEditing) {
-      startEdit(effectiveEditInitialValue ?? void 0);
+    if (editRequestForMe && !isEditing) {
+      startEdit(editRequestForMe.initialValue ?? void 0);
     }
-  }, [effectiveEditTrigger]);
+  }, [editRequestForMe?.n]);
   React3.useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();

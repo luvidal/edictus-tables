@@ -613,6 +613,64 @@ describe('GridTextInput — Enter blurs by default', () => {
 })
 
 // ============================================================================
+// (o) Cell-scoped edit/clear requests — tabbing into a sibling does not clobber it
+// ============================================================================
+
+describe('useGridKeyboard — edit/clear requests are cell-scoped, not global', () => {
+    it('after type-to-edit "5" in cell A, tabbing to cell B does NOT enter B into edit mode with "5"', () => {
+        // Regression: editTrigger used to be a global counter. When B became
+        // focused after A's commit, B's effectiveEditTrigger snapped 0→N and
+        // its effect fired startEdit(stale initialValue) — silently entering
+        // edit mode on B with "5" pre-filled. A subsequent blur would commit
+        // "5" over B's real value. Now requests are scoped to (rowId, cellKey).
+        const rows: DebtRow[] = [{ id: 'r1', entidad: 'A', tipo: 'X', deuda_total: 100, vigente: 200 }]
+        const { container } = render(<DebtsHarness initialRows={rows} />)
+        const tds = Array.from(container.querySelectorAll('td[tabindex="0"]')) as HTMLElement[]
+        const v1Wrap = tds[0]
+        const v2Wrap = tds[1]
+        act(() => v1Wrap.focus())
+        fireEvent.keyDown(v1Wrap, { key: '5' })
+        const input1 = v1Wrap.querySelector('input') as HTMLInputElement
+        expect(input1?.value).toBe('5')
+        fireEvent.keyDown(input1, { key: 'Tab' })
+        // V2 must NOT be in edit mode with "5". Either no input, or input
+        // exists but its value is V2's real value (not the stale "5").
+        const v2Input = v2Wrap.querySelector('input') as HTMLInputElement | null
+        if (v2Input) expect(v2Input.value).not.toBe('5')
+    })
+
+    it('after Delete in cell A, tabbing to cell B does NOT erase B', () => {
+        // Regression: same root cause — clearTrigger was a global counter.
+        // Tabbing into B with a stale clearTrigger>0 would synchronously
+        // fire onChange(null) on B and erase its value.
+        const onRowsChange = vi.fn()
+        const Harness = () => {
+            const [r, setR] = useState<DebtRow[]>([
+                { id: 'r1', entidad: 'A', tipo: 'X', deuda_total: 100, vigente: 200 },
+            ])
+            return (
+                <CrudTable<DebtRow>
+                    columns={DEBT_COLUMNS}
+                    rows={r}
+                    onRowsChange={next => { onRowsChange(next); setR(next) }}
+                    idPrefix="t"
+                />
+            )
+        }
+        const { container } = render(<Harness />)
+        const tds = Array.from(container.querySelectorAll('td[tabindex="0"]')) as HTMLElement[]
+        const v1Wrap = tds[0]
+        // Focus V1, press Delete → V1 cleared. Tab → focus moves to V2.
+        act(() => v1Wrap.focus())
+        fireEvent.keyDown(v1Wrap, { key: 'Delete' })
+        fireEvent.keyDown(v1Wrap, { key: 'Tab' })
+        // Inspect the latest committed rows: V2 must still be 200.
+        const lastCall = onRowsChange.mock.calls.at(-1)?.[0] as DebtRow[]
+        expect(lastCall?.[0].vigente).toBe(200)
+    })
+})
+
+// ============================================================================
 // (n) AssetTable — text column honors per-row visible/readOnly predicates
 // ============================================================================
 

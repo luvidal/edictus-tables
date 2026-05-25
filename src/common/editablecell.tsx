@@ -109,15 +109,19 @@ const EditableCell = ({
 
     // Focus state — from registry when wired, else from legacy `focused` prop
     const cellFocused = useRegistry ? keyboard!.isFocused(rowId!, cellKey!) : focused
-    const effectiveEditTrigger = useRegistry
-        ? (cellFocused ? keyboard!.editTrigger : 0)
-        : requestEdit
-    const effectiveClearTrigger = useRegistry
-        ? (cellFocused ? keyboard!.clearTrigger : 0)
-        : requestClear
-    const effectiveEditInitialValue = useRegistry
-        ? (cellFocused ? keyboard!.editInitialValue : undefined)
-        : editInitialValue
+    // Registry path: only consume a request when it targets THIS cell. The old
+    // global-counter design let a sibling cell consume A's leftover trigger
+    // when focus shifted, clobbering values on Tab. (See: cell-scoped triggers.)
+    const editRequest = useRegistry ? keyboard!.editRequest : null
+    const clearRequest = useRegistry ? keyboard!.clearRequest : null
+    const editRequestForMe = useRegistry && editRequest
+        && editRequest.rowId === rowId && editRequest.cellKey === cellKey
+        ? editRequest
+        : null
+    const clearRequestForMe = useRegistry && clearRequest
+        && clearRequest.rowId === rowId && clearRequest.cellKey === cellKey
+        ? clearRequest
+        : null
 
     const startEdit = (initialValue?: string) => {
         committingRef.current = false
@@ -240,19 +244,31 @@ const EditableCell = ({
 
     const Wrapper = asDiv ? 'div' : 'td'
 
-    // Trigger edit externally (keyboard Enter/F2 or type-to-edit)
+    // Trigger edit externally (keyboard Enter/F2 or type-to-edit).
+    // Registry path: react to a cell-scoped `editRequest` whose target matches
+    // this (rowId, cellKey). Legacy path: the per-cell `requestEdit` counter.
     useEffect(() => {
-        if (effectiveEditTrigger > 0 && !isEditing) {
-            startEdit(effectiveEditInitialValue ?? undefined)
+        if (useRegistry) {
+            if (editRequestForMe && !isEditing) {
+                startEdit(editRequestForMe.initialValue ?? undefined)
+            }
+            return
         }
-    }, [effectiveEditTrigger])
+        if (requestEdit > 0 && !isEditing) {
+            startEdit(editInitialValue ?? undefined)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [useRegistry ? editRequestForMe?.n : requestEdit])
 
-    // Trigger clear externally (keyboard Delete/Backspace)
+    // Trigger clear externally (keyboard Delete/Backspace). Same scoping.
     useEffect(() => {
-        if (effectiveClearTrigger > 0) {
-            onChange(null)
+        if (useRegistry) {
+            if (clearRequestForMe) onChange(null)
+            return
         }
-    }, [effectiveClearTrigger])
+        if (requestClear > 0) onChange(null)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [useRegistry ? clearRequestForMe?.n : requestClear])
 
     // Click to select (focus ring only), double-click to edit
     const handleClick = () => {

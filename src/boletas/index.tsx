@@ -1,4 +1,3 @@
-import React from 'react'
 import { displayCurrencyCompact } from '../common/utils'
 import { T } from '../common/styles'
 import { resolveColors } from '../common/colors'

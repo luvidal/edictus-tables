@@ -88,7 +88,6 @@ export default function EditableField({
     // `editRequest`. We only consume requests whose target matches THIS cell —
     // otherwise tabbing into a sibling would inherit the previous cell's edit
     // request and silently enter edit mode here.
-    const cellFocused = useRegistry ? keyboard!.isFocused(rowId!, cellKey!) : false
     const editRequest = useRegistry ? keyboard!.editRequest : null
     const editRequestForMe = useRegistry && editRequest
         && editRequest.rowId === rowId && editRequest.cellKey === cellKey

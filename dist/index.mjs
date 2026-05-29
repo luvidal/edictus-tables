@@ -1,4 +1,4 @@
-import React3, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
+import React2, { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { Eye, Trash2, ChevronUp, ChevronDown, Undo2, Info, ChevronRight, GripVertical, Ungroup, Check, X, FoldVertical } from 'lucide-react';
 import { jsx, jsxs, Fragment } from 'react/jsx-runtime';
 import { createPortal } from 'react-dom';
@@ -339,7 +339,6 @@ var EditableCell = ({
   hasData = true,
   className = "",
   align = "right",
-  placeholder = "",
   onViewSource,
   asDiv = false,
   focused = false,
@@ -2019,12 +2018,12 @@ var RentaTable = ({
           children: [
             effectiveSections.map((section) => {
               const items = getOrderedItems(rows, section.type);
-              return /* @__PURE__ */ jsxs(React3.Fragment, { children: [
+              return /* @__PURE__ */ jsxs(React2.Fragment, { children: [
                 items.map((item) => {
                   if (item.kind === "group") {
                     const { group, children: groupChildren } = item;
                     const showChildren = forceExpanded || !group.collapsed;
-                    return /* @__PURE__ */ jsxs(React3.Fragment, { children: [
+                    return /* @__PURE__ */ jsxs(React2.Fragment, { children: [
                       /* @__PURE__ */ jsx(
                         grouprow_default,
                         {
@@ -2453,7 +2452,6 @@ function EditableField({
       ref: wrapperRef
     });
   }, [useRegistry, register, rowId, cellKey]);
-  useRegistry ? keyboard.isFocused(rowId, cellKey) : false;
   const editRequest = useRegistry ? keyboard.editRequest : null;
   const editRequestForMe = useRegistry && editRequest && editRequest.rowId === rowId && editRequest.cellKey === cellKey ? editRequest : null;
   const hidden = defaultValue != null && value === defaultValue;

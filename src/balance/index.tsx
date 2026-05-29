@@ -4,7 +4,6 @@
  *   - Table: column headers + two data rows (Empresa 100%, Participación X%)
  */
 
-import React from 'react'
 import { Eye } from 'lucide-react'
 import { T } from '../common/styles'
 import { resolveColors } from '../common/colors'

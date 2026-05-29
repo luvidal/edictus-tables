@@ -1,7 +1,7 @@
 import { T } from '../common/styles'
-import { resolveColors, DEFAULT_SCHEME } from '../common/colors'
+import { DEFAULT_SCHEME } from '../common/colors'
 import { displayCurrencyCompact, displayCurrency } from '../common/utils'
-import type { SummaryRow, SummaryRowFormat, SummaryTableProps } from './types'
+import type { SummaryRowFormat, SummaryTableProps } from './types'
 
 function formatCell(v: number | null, format: SummaryRowFormat): { display: string; title: string | undefined } {
   if (v == null) return { display: '—', title: undefined }

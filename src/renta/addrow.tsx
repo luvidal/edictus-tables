@@ -1,4 +1,3 @@
-import React from 'react'
 import EditableCell from '../common/editablecell'
 import GridTextInput from '../common/gridtextinput'
 import { T } from '../common/styles'

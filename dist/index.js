@@ -2,14 +2,14 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var React3 = require('react');
+var React2 = require('react');
 var lucideReact = require('lucide-react');
 var jsxRuntime = require('react/jsx-runtime');
 var reactDom = require('react-dom');
 
 function _interopDefault (e) { return e && e.__esModule ? e : { default: e }; }
 
-var React3__default = /*#__PURE__*/_interopDefault(React3);
+var React2__default = /*#__PURE__*/_interopDefault(React2);
 
 // src/renta/index.tsx
 
@@ -324,8 +324,8 @@ var restoreRows = (rows, ids) => {
   });
 };
 var useIsMobile = () => {
-  const [isMobile, setIsMobile] = React3.useState(false);
-  React3.useEffect(() => {
+  const [isMobile, setIsMobile] = React2.useState(false);
+  React2.useEffect(() => {
     const mql = window.matchMedia("(max-width: 639px)");
     setIsMobile(mql.matches);
     const handler = (e) => setIsMobile(e.matches);
@@ -347,7 +347,6 @@ var EditableCell = ({
   hasData = true,
   className = "",
   align = "right",
-  placeholder = "",
   onViewSource,
   asDiv = false,
   focused = false,
@@ -362,15 +361,15 @@ var EditableCell = ({
   cellKey
 }) => {
   const isMobile = useIsMobile();
-  const [isEditing, setIsEditing] = React3.useState(false);
-  const [editValue, setEditValue] = React3.useState("");
-  const [isHovered, setIsHovered] = React3.useState(false);
-  const inputRef = React3.useRef(null);
-  const wrapperRef = React3.useRef(null);
-  const committingRef = React3.useRef(false);
+  const [isEditing, setIsEditing] = React2.useState(false);
+  const [editValue, setEditValue] = React2.useState("");
+  const [isHovered, setIsHovered] = React2.useState(false);
+  const inputRef = React2.useRef(null);
+  const wrapperRef = React2.useRef(null);
+  const committingRef = React2.useRef(false);
   const useRegistry = !!(keyboard && rowId && cellKey);
   const register = keyboard?.register;
-  React3.useEffect(() => {
+  React2.useEffect(() => {
     if (!useRegistry || !register) return;
     return register({ rowId, cellKey, ref: wrapperRef });
   }, [useRegistry, register, rowId, cellKey]);
@@ -384,7 +383,7 @@ var EditableCell = ({
     setEditValue(initialValue ?? value?.toString() ?? "");
     setIsEditing(true);
   };
-  React3.useLayoutEffect(() => {
+  React2.useLayoutEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       if (editValue.length <= 1) {
@@ -459,7 +458,7 @@ var EditableCell = ({
   const alignClass = align === "left" ? "text-left justify-start" : align === "center" ? "text-center justify-center" : "text-right justify-end";
   const inputAlignClass = align === "left" ? "text-left" : align === "center" ? "text-center" : "text-right";
   const Wrapper = asDiv ? "div" : "td";
-  React3.useLayoutEffect(() => {
+  React2.useLayoutEffect(() => {
     if (useRegistry) {
       if (editRequestForMe && !isEditing) {
         startEdit(editRequestForMe.initialValue ?? void 0);
@@ -470,7 +469,7 @@ var EditableCell = ({
       startEdit(editInitialValue ?? void 0);
     }
   }, [useRegistry ? editRequestForMe?.n : requestEdit]);
-  React3.useEffect(() => {
+  React2.useEffect(() => {
     if (useRegistry) {
       if (clearRequestForMe) onChange(null);
       return;
@@ -554,9 +553,9 @@ var GridTextInput = ({
   title,
   onEnter
 }) => {
-  const ref = React3.useRef(null);
+  const ref = React2.useRef(null);
   const { register, focus, navigate } = keyboard;
-  React3.useEffect(() => {
+  React2.useEffect(() => {
     return register({
       rowId,
       cellKey,
@@ -941,7 +940,7 @@ var GroupRow = ({
   onDrop,
   onDragEnd
 }) => {
-  const groupValues = React3.useMemo(() => computeGroupValues(childRows, months), [childRows, months]);
+  const groupValues = React2.useMemo(() => computeGroupValues(childRows, months), [childRows, months]);
   const subtract = isSubtractType(group.type);
   const isExpanded = forceExpanded || !group.collapsed;
   const dropBorder = dropIndicator === "above" ? "border-t-2 border-t-brand" : dropIndicator === "below" ? "border-b-2 border-b-brand" : "";
@@ -1022,13 +1021,13 @@ var GroupRow = ({
 };
 var grouprow_default = GroupRow;
 var DeleteDialog = ({ count, onConfirm, onCancel }) => {
-  const [reason, setReason] = React3.useState("");
-  const inputRef = React3.useRef(null);
-  const cardRef = React3.useRef(null);
-  React3.useEffect(() => {
+  const [reason, setReason] = React2.useState("");
+  const inputRef = React2.useRef(null);
+  const cardRef = React2.useRef(null);
+  React2.useEffect(() => {
     inputRef.current?.focus();
   }, []);
-  React3.useEffect(() => {
+  React2.useEffect(() => {
     const handleKey = (e) => {
       if (e.key === "Escape") onCancel();
     };
@@ -1104,7 +1103,7 @@ var DeleteDialog = ({ count, onConfirm, onCancel }) => {
 };
 var deletedialog_default = DeleteDialog;
 function RecycleBin({ deletedRows, getLabel, onRestore, renderCells }) {
-  const [expanded, setExpanded] = React3.useState(false);
+  const [expanded, setExpanded] = React2.useState(false);
   if (deletedRows.length === 0) return null;
   return /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "border-t border-edge-subtle/10 bg-surface-1/50", children: [
     /* @__PURE__ */ jsxRuntime.jsxs(
@@ -1155,8 +1154,8 @@ function RecycleBin({ deletedRows, getLabel, onRestore, renderCells }) {
 }
 var recyclebin_default = RecycleBin;
 var ContextMenu = ({ x, y, canGroup, selectedCount, onGroup, onDeleteSelected, onCancel, onClose }) => {
-  const ref = React3.useRef(null);
-  React3.useEffect(() => {
+  const ref = React2.useRef(null);
+  React2.useEffect(() => {
     const handle = (e) => {
       if (ref.current && !ref.current.contains(e.target)) onClose();
     };
@@ -1170,7 +1169,7 @@ var ContextMenu = ({ x, y, canGroup, selectedCount, onGroup, onDeleteSelected, o
       document.removeEventListener("keydown", handleKey);
     };
   }, [onClose]);
-  React3.useEffect(() => {
+  React2.useEffect(() => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     if (rect.right > window.innerWidth) {
@@ -1244,14 +1243,14 @@ var ContextMenu = ({ x, y, canGroup, selectedCount, onGroup, onDeleteSelected, o
   return menu;
 };
 var HeaderSelectionBar = ({ selectedCount, canGroup, monthCount, naming, onNamingChange, onGroup, onDeleteSelected, onCancel, showVariableColumn = false, showClassificationColumns = false }) => {
-  const [groupName, setGroupName] = React3.useState("");
-  const inputRef = React3.useRef(null);
-  React3.useEffect(() => {
+  const [groupName, setGroupName] = React2.useState("");
+  const inputRef = React2.useRef(null);
+  React2.useEffect(() => {
     if (naming && inputRef.current) {
       inputRef.current.focus();
     }
   }, [naming]);
-  React3.useEffect(() => {
+  React2.useEffect(() => {
     if (selectedCount === 0) {
       setGroupName("");
     }
@@ -1353,19 +1352,19 @@ var HeaderSelectionBar = ({ selectedCount, canGroup, monthCount, naming, onNamin
   );
 };
 var useGridKeyboard = ({ visibleRowIds }) => {
-  const [focusedCell, setFocusedCell] = React3.useState(null);
-  const [editRequest, setEditRequest] = React3.useState(null);
-  const [clearRequest, setClearRequest] = React3.useState(null);
-  const focusedCellRef = React3.useRef(focusedCell);
-  React3.useEffect(() => {
+  const [focusedCell, setFocusedCell] = React2.useState(null);
+  const [editRequest, setEditRequest] = React2.useState(null);
+  const [clearRequest, setClearRequest] = React2.useState(null);
+  const focusedCellRef = React2.useRef(focusedCell);
+  React2.useEffect(() => {
     focusedCellRef.current = focusedCell;
   }, [focusedCell]);
-  const visibleRowIdsRef = React3.useRef(visibleRowIds);
-  React3.useEffect(() => {
+  const visibleRowIdsRef = React2.useRef(visibleRowIds);
+  React2.useEffect(() => {
     visibleRowIdsRef.current = visibleRowIds;
   }, [visibleRowIds]);
-  const registryRef = React3.useRef(/* @__PURE__ */ new Map());
-  const register = React3.useCallback((stop) => {
+  const registryRef = React2.useRef(/* @__PURE__ */ new Map());
+  const register = React2.useCallback((stop) => {
     const list = registryRef.current.get(stop.rowId);
     if (list) {
       if (process.env.NODE_ENV !== "production" && list.some((s) => s.cellKey === stop.cellKey)) {
@@ -1385,7 +1384,7 @@ var useGridKeyboard = ({ visibleRowIds }) => {
       else registryRef.current.set(stop.rowId, next);
     };
   }, []);
-  const getOrderedStops = React3.useCallback((rowId) => {
+  const getOrderedStops = React2.useCallback((rowId) => {
     const list = registryRef.current.get(rowId);
     if (!list || list.length === 0) return [];
     const alive = list.filter((s) => s.ref.current != null);
@@ -1400,18 +1399,18 @@ var useGridKeyboard = ({ visibleRowIds }) => {
     });
     return alive;
   }, []);
-  const isFocused = React3.useCallback((rowId, cellKey) => {
+  const isFocused = React2.useCallback((rowId, cellKey) => {
     return focusedCell?.rowId === rowId && focusedCell?.cellKey === cellKey;
   }, [focusedCell]);
-  const focus = React3.useCallback((rowId, cellKey) => {
+  const focus = React2.useCallback((rowId, cellKey) => {
     setFocusedCell({ rowId, cellKey });
   }, []);
-  const clearFocus = React3.useCallback(() => setFocusedCell(null), []);
-  const focusStop = React3.useCallback((stop) => {
+  const clearFocus = React2.useCallback(() => setFocusedCell(null), []);
+  const focusStop = React2.useCallback((stop) => {
     stop.ref.current?.focus();
     setFocusedCell({ rowId: stop.rowId, cellKey: stop.cellKey });
   }, []);
-  const navigate = React3.useCallback((direction) => {
+  const navigate = React2.useCallback((direction) => {
     const cur = focusedCellRef.current;
     if (!cur) return;
     const rowIds = visibleRowIdsRef.current;
@@ -1470,7 +1469,7 @@ var useGridKeyboard = ({ visibleRowIds }) => {
       }
     }
   }, [focusStop, getOrderedStops]);
-  const handleContainerKeyDown = React3.useCallback((e) => {
+  const handleContainerKeyDown = React2.useCallback((e) => {
     if (!focusedCellRef.current) return;
     const target = e.target;
     if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
@@ -1556,15 +1555,15 @@ var useGridKeyboard = ({ visibleRowIds }) => {
 // src/renta/usekeyboard.ts
 var useKeyboard = ({ visibleRowIds }) => useGridKeyboard({ visibleRowIds });
 var useDragReorder = () => {
-  const [dragRowId, setDragRowId] = React3.useState(null);
-  const [dropTargetId, setDropTargetId] = React3.useState(null);
-  const [dropPosition, setDropPosition] = React3.useState(null);
-  const handleDragStart = React3.useCallback((rowId) => (e) => {
+  const [dragRowId, setDragRowId] = React2.useState(null);
+  const [dropTargetId, setDropTargetId] = React2.useState(null);
+  const [dropPosition, setDropPosition] = React2.useState(null);
+  const handleDragStart = React2.useCallback((rowId) => (e) => {
     setDragRowId(rowId);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", rowId);
   }, []);
-  const handleDragOver = React3.useCallback((rowId) => (e) => {
+  const handleDragOver = React2.useCallback((rowId) => (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (rowId === dragRowId) return;
@@ -1574,11 +1573,11 @@ var useDragReorder = () => {
     setDropTargetId(rowId);
     setDropPosition(pos);
   }, [dragRowId]);
-  const handleDragLeave = React3.useCallback(() => {
+  const handleDragLeave = React2.useCallback(() => {
     setDropTargetId(null);
     setDropPosition(null);
   }, []);
-  const handleDrop = React3.useCallback((rows, onRowsChange) => (e) => {
+  const handleDrop = React2.useCallback((rows, onRowsChange) => (e) => {
     e.preventDefault();
     const sourceId = e.dataTransfer.getData("text/plain");
     if (!sourceId || !dropTargetId || sourceId === dropTargetId) {
@@ -1626,7 +1625,7 @@ var useDragReorder = () => {
     onRowsChange(result);
     resetState();
   }, [dropTargetId, dropPosition]);
-  const handleDragEnd = React3.useCallback(() => {
+  const handleDragEnd = React2.useCallback(() => {
     resetState();
   }, []);
   function resetState() {
@@ -1650,12 +1649,12 @@ function isSameFamily(a, b) {
   return isAdd(a.type) === isAdd(b.type);
 }
 function useRowHover() {
-  const [hoveredRow, setHoveredRow] = React3.useState(null);
-  const getHoverProps = React3.useCallback((id) => ({
+  const [hoveredRow, setHoveredRow] = React2.useState(null);
+  const getHoverProps = React2.useCallback((id) => ({
     onMouseEnter: () => setHoveredRow(id),
     onMouseLeave: () => setHoveredRow(null)
   }), []);
-  const isHovered = React3.useCallback((id) => hoveredRow === id, [hoveredRow]);
+  const isHovered = React2.useCallback((id) => hoveredRow === id, [hoveredRow]);
   return { hoveredRow, getHoverProps, isHovered };
 }
 var fmtK = (v) => {
@@ -1716,16 +1715,16 @@ var RentaTable = ({
 }) => {
   const { bg: headerBg, text: headerText } = resolveColors(colorSchemeProp, headerBgProp, headerTextProp);
   const { getHoverProps, isHovered: isRowHovered } = useRowHover();
-  const [newRowLabels, setNewRowLabels] = React3.useState({});
-  const [selectedRows, setSelectedRows] = React3.useState(/* @__PURE__ */ new Set());
-  const [contextMenu, setContextMenu] = React3.useState(null);
-  const [naming, setNaming] = React3.useState(false);
-  const [deleteTarget, setDeleteTarget] = React3.useState(null);
-  const monthsArray = React3.useMemo(() => {
+  const [newRowLabels, setNewRowLabels] = React2.useState({});
+  const [selectedRows, setSelectedRows] = React2.useState(/* @__PURE__ */ new Set());
+  const [contextMenu, setContextMenu] = React2.useState(null);
+  const [naming, setNaming] = React2.useState(false);
+  const [deleteTarget, setDeleteTarget] = React2.useState(null);
+  const monthsArray = React2.useMemo(() => {
     if (typeof months === "number") return generateLastNMonths(months);
     return months;
   }, [months]);
-  const effectiveSections = React3.useMemo(() => {
+  const effectiveSections = React2.useMemo(() => {
     if (sections) return sections;
     const hasIncome = rows.some((r) => r.type === "income");
     const hasDeduction = rows.some((r) => r.type === "deduction");
@@ -1741,7 +1740,7 @@ var RentaTable = ({
     return result;
   }, [sections, rows]);
   const anySelected = selectedRows.size > 0;
-  const visibleRowIds = React3.useMemo(() => {
+  const visibleRowIds = React2.useMemo(() => {
     const ids = [];
     for (const section of effectiveSections) {
       const items = getOrderedItems(rows, section.type);
@@ -1761,8 +1760,8 @@ var RentaTable = ({
   }, [effectiveSections, rows, forceExpanded]);
   const keyboard = useKeyboard({ visibleRowIds });
   const drag = useDragReorder();
-  const expandTimerRef = React3.useRef(null);
-  React3.useEffect(() => {
+  const expandTimerRef = React2.useRef(null);
+  React2.useEffect(() => {
     if (expandTimerRef.current) {
       clearTimeout(expandTimerRef.current);
       expandTimerRef.current = null;
@@ -1778,7 +1777,7 @@ var RentaTable = ({
       }
     };
   }, [drag.dropTargetId]);
-  const toggleSelect = React3.useCallback((rowId) => {
+  const toggleSelect = React2.useCallback((rowId) => {
     setSelectedRows((prev) => {
       const next = new Set(prev);
       if (next.has(rowId)) next.delete(rowId);
@@ -1786,39 +1785,39 @@ var RentaTable = ({
       return next;
     });
   }, []);
-  const clearSelection = React3.useCallback(() => setSelectedRows(/* @__PURE__ */ new Set()), []);
-  const canGroup = React3.useMemo(() => {
+  const clearSelection = React2.useCallback(() => setSelectedRows(/* @__PURE__ */ new Set()), []);
+  const canGroup = React2.useMemo(() => {
     if (selectedRows.size < 2) return false;
     const selected = rows.filter((r) => selectedRows.has(r.id));
     if (selected.some((r) => r.isGroup)) return false;
     const types = new Set(selected.map((r) => isAddType(r.type) ? "add" : "subtract"));
     return types.size === 1;
   }, [selectedRows, rows]);
-  const handleGroup = React3.useCallback((name) => {
+  const handleGroup = React2.useCallback((name) => {
     const newRows = createGroup(rows, selectedRows, name);
     onRowsChange(newRows);
     clearSelection();
     setNaming(false);
   }, [rows, selectedRows, onRowsChange, clearSelection]);
-  const handleContextMenu = React3.useCallback((e, rowId) => {
+  const handleContextMenu = React2.useCallback((e, rowId) => {
     if (!selectedRows.has(rowId) || selectedRows.size < 2) return;
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY });
   }, [selectedRows]);
-  const startGroupNaming = React3.useCallback(() => {
+  const startGroupNaming = React2.useCallback(() => {
     setContextMenu(null);
     setNaming(true);
   }, []);
-  const updateRowLabel = React3.useCallback((rowId, label) => {
+  const updateRowLabel = React2.useCallback((rowId, label) => {
     onRowsChange(rows.map((r) => r.id === rowId ? { ...r, label } : r));
   }, [rows, onRowsChange]);
-  const updateRowValue = React3.useCallback((rowId, monthId, value) => {
+  const updateRowValue = React2.useCallback((rowId, monthId, value) => {
     onRowsChange(rows.map((r) => {
       if (r.id !== rowId) return r;
       return { ...r, values: { ...r.values, [monthId]: value } };
     }));
   }, [rows, onRowsChange]);
-  const requestDelete = React3.useCallback((rowId) => {
+  const requestDelete = React2.useCallback((rowId) => {
     const row = rows.find((r) => r.id === rowId);
     if (!row) return;
     if (row.isGroup) {
@@ -1827,36 +1826,36 @@ var RentaTable = ({
     }
     setDeleteTarget(/* @__PURE__ */ new Set([rowId]));
   }, [rows, onRowsChange]);
-  const requestDeleteSelected = React3.useCallback(() => {
+  const requestDeleteSelected = React2.useCallback(() => {
     setDeleteTarget(new Set(selectedRows));
   }, [selectedRows]);
-  const confirmDelete = React3.useCallback((reason) => {
+  const confirmDelete = React2.useCallback((reason) => {
     if (!deleteTarget) return;
     const newRows = softDeleteRows(rows, deleteTarget, reason);
     onRowsChange(newRows);
     clearSelection();
     setDeleteTarget(null);
   }, [rows, deleteTarget, onRowsChange, clearSelection]);
-  const handleRestore = React3.useCallback((rowId) => {
+  const handleRestore = React2.useCallback((rowId) => {
     onRowsChange(restoreRows(rows, /* @__PURE__ */ new Set([rowId])));
   }, [rows, onRowsChange]);
-  const deletedRows = React3.useMemo(
+  const deletedRows = React2.useMemo(
     () => rows.filter((r) => r.deletedAt && !r.isGroup),
     [rows]
   );
-  const toggleGroupCollapse = React3.useCallback((groupId) => {
+  const toggleGroupCollapse = React2.useCallback((groupId) => {
     onRowsChange(rows.map((r) => r.id === groupId ? { ...r, collapsed: !r.collapsed } : r));
   }, [rows, onRowsChange]);
-  const handleUngroup = React3.useCallback((groupId) => {
+  const handleUngroup = React2.useCallback((groupId) => {
     onRowsChange(ungroupRows(rows, groupId));
   }, [rows, onRowsChange]);
-  const toggleVariable = React3.useCallback((rowId) => {
+  const toggleVariable = React2.useCallback((rowId) => {
     onRowsChange(rows.map((r) => {
       if (r.id !== rowId) return r;
       return { ...r, isVariable: !r.isVariable };
     }));
   }, [rows, onRowsChange]);
-  const toggleNaturaleza = React3.useCallback((rowId) => {
+  const toggleNaturaleza = React2.useCallback((rowId) => {
     onRowsChange(rows.map((r) => {
       if (r.id !== rowId) return r;
       const isIncome = isAddType(r.type);
@@ -1865,7 +1864,7 @@ var RentaTable = ({
       return { ...r, naturaleza: next };
     }));
   }, [rows, onRowsChange]);
-  const addRow = React3.useCallback((type, label) => {
+  const addRow = React2.useCallback((type, label) => {
     if (!label.trim()) return;
     const newRow = { id: `row_${type}_${Date.now()}`, label: label.trim(), type, values: {} };
     setNewRowLabels((prev) => ({ ...prev, [type]: "" }));
@@ -1882,7 +1881,7 @@ var RentaTable = ({
       onRowsChange([...rows, newRow]);
     }
   }, [rows, onRowsChange]);
-  const addRowWithValue = React3.useCallback((type, monthId, value) => {
+  const addRowWithValue = React2.useCallback((type, monthId, value) => {
     if (value === null) return;
     const pendingLabel = (newRowLabels[type] || "").trim();
     const defaultLabel = isAddType(type) ? "Nuevo ingreso" : "Nuevo descuento";
@@ -2027,12 +2026,12 @@ var RentaTable = ({
           children: [
             effectiveSections.map((section) => {
               const items = getOrderedItems(rows, section.type);
-              return /* @__PURE__ */ jsxRuntime.jsxs(React3__default.default.Fragment, { children: [
+              return /* @__PURE__ */ jsxRuntime.jsxs(React2__default.default.Fragment, { children: [
                 items.map((item) => {
                   if (item.kind === "group") {
                     const { group, children: groupChildren } = item;
                     const showChildren = forceExpanded || !group.collapsed;
-                    return /* @__PURE__ */ jsxRuntime.jsxs(React3__default.default.Fragment, { children: [
+                    return /* @__PURE__ */ jsxRuntime.jsxs(React2__default.default.Fragment, { children: [
                       /* @__PURE__ */ jsxRuntime.jsx(
                         grouprow_default,
                         {
@@ -2446,14 +2445,14 @@ function EditableField({
   rowId,
   cellKey
 }) {
-  const [isEditing, setIsEditing] = React3.useState(false);
-  const [editValue, setEditValue] = React3.useState("");
-  const inputRef = React3.useRef(null);
-  const wrapperRef = React3.useRef(null);
-  const committingRef = React3.useRef(false);
+  const [isEditing, setIsEditing] = React2.useState(false);
+  const [editValue, setEditValue] = React2.useState("");
+  const inputRef = React2.useRef(null);
+  const wrapperRef = React2.useRef(null);
+  const committingRef = React2.useRef(false);
   const useRegistry = !!(keyboard && rowId && cellKey);
   const register = keyboard?.register;
-  React3.useEffect(() => {
+  React2.useEffect(() => {
     if (!useRegistry || !register) return;
     return register({
       rowId,
@@ -2461,7 +2460,6 @@ function EditableField({
       ref: wrapperRef
     });
   }, [useRegistry, register, rowId, cellKey]);
-  useRegistry ? keyboard.isFocused(rowId, cellKey) : false;
   const editRequest = useRegistry ? keyboard.editRequest : null;
   const editRequestForMe = useRegistry && editRequest && editRequest.rowId === rowId && editRequest.cellKey === cellKey ? editRequest : null;
   const hidden = defaultValue != null && value === defaultValue;
@@ -2470,12 +2468,12 @@ function EditableField({
     setEditValue(initialValue ?? value?.toString() ?? "");
     setIsEditing(true);
   };
-  React3.useLayoutEffect(() => {
+  React2.useLayoutEffect(() => {
     if (editRequestForMe && !isEditing) {
       startEdit(editRequestForMe.initialValue ?? void 0);
     }
   }, [editRequestForMe?.n]);
-  React3.useLayoutEffect(() => {
+  React2.useLayoutEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
       if (editValue.length <= 1) {
@@ -2592,13 +2590,13 @@ function applyAutoCompute(row, editedField, rules, params) {
   return result;
 }
 function useSoftDelete(rows, onRowsChange) {
-  const [deleteTargetId, setDeleteTargetId] = React3.useState(null);
-  const activeRows = React3.useMemo(() => rows.filter((r) => !r.deletedAt), [rows]);
-  const deletedRows = React3.useMemo(() => rows.filter((r) => !!r.deletedAt), [rows]);
-  const requestDelete = React3.useCallback((id) => {
+  const [deleteTargetId, setDeleteTargetId] = React2.useState(null);
+  const activeRows = React2.useMemo(() => rows.filter((r) => !r.deletedAt), [rows]);
+  const deletedRows = React2.useMemo(() => rows.filter((r) => !!r.deletedAt), [rows]);
+  const requestDelete = React2.useCallback((id) => {
     setDeleteTargetId(id);
   }, []);
-  const confirmDelete = React3.useCallback((reason) => {
+  const confirmDelete = React2.useCallback((reason) => {
     if (!deleteTargetId) return;
     const now = (/* @__PURE__ */ new Date()).toISOString();
     onRowsChange(rows.map(
@@ -2606,10 +2604,10 @@ function useSoftDelete(rows, onRowsChange) {
     ));
     setDeleteTargetId(null);
   }, [deleteTargetId, rows, onRowsChange]);
-  const cancelDelete = React3.useCallback(() => {
+  const cancelDelete = React2.useCallback(() => {
     setDeleteTargetId(null);
   }, []);
-  const restoreRow = React3.useCallback((id) => {
+  const restoreRow = React2.useCallback((id) => {
     onRowsChange(rows.map((r) => {
       if (r.id !== id) return r;
       const { deletedAt: _, deletionReason: __, ...rest } = r;
@@ -2619,15 +2617,15 @@ function useSoftDelete(rows, onRowsChange) {
   return { activeRows, deletedRows, deleteTargetId, requestDelete, confirmDelete, cancelDelete, restoreRow };
 }
 var useDragReorder2 = () => {
-  const [dragRowId, setDragRowId] = React3.useState(null);
-  const [dropTargetId, setDropTargetId] = React3.useState(null);
-  const [dropPosition, setDropPosition] = React3.useState(null);
-  const handleDragStart = React3.useCallback((rowId) => (e) => {
+  const [dragRowId, setDragRowId] = React2.useState(null);
+  const [dropTargetId, setDropTargetId] = React2.useState(null);
+  const [dropPosition, setDropPosition] = React2.useState(null);
+  const handleDragStart = React2.useCallback((rowId) => (e) => {
     setDragRowId(rowId);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", rowId);
   }, []);
-  const handleDragOver = React3.useCallback((rowId) => (e) => {
+  const handleDragOver = React2.useCallback((rowId) => (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (rowId === dragRowId) return;
@@ -2636,7 +2634,7 @@ var useDragReorder2 = () => {
     setDropTargetId(rowId);
     setDropPosition(e.clientY < midY ? "above" : "below");
   }, [dragRowId]);
-  const handleDrop = React3.useCallback((rows, onRowsChange) => (e) => {
+  const handleDrop = React2.useCallback((rows, onRowsChange) => (e) => {
     e.preventDefault();
     const sourceId = e.dataTransfer.getData("text/plain");
     if (!sourceId || !dropTargetId || sourceId === dropTargetId) {
@@ -2655,7 +2653,7 @@ var useDragReorder2 = () => {
     onRowsChange(result);
     resetState();
   }, [dropTargetId, dropPosition]);
-  const handleDragEnd = React3.useCallback(() => {
+  const handleDragEnd = React2.useCallback(() => {
     resetState();
   }, []);
   function resetState() {
@@ -2669,7 +2667,7 @@ var useDragReorder2 = () => {
     dropPosition,
     handleDragStart,
     handleDragOver,
-    handleDragLeave: React3.useCallback(() => {
+    handleDragLeave: React2.useCallback(() => {
       setDropTargetId(null);
       setDropPosition(null);
     }, []),
@@ -2707,10 +2705,10 @@ function AssetTable({
 }) {
   const { bg: headerBg, text: headerText, border: borderColor } = resolveColors(colorSchemeProp, headerBgProp, headerTextProp);
   const { getHoverProps, isHovered } = useRowHover();
-  const [toggledCols, setToggledCols] = React3.useState(/* @__PURE__ */ new Set());
+  const [toggledCols, setToggledCols] = React2.useState(/* @__PURE__ */ new Set());
   const { activeRows, deletedRows, deleteTargetId, requestDelete, confirmDelete, cancelDelete, restoreRow } = useSoftDelete(rows, onRowsChange);
-  const [selectedRows, setSelectedRows] = React3.useState(/* @__PURE__ */ new Set());
-  const [newRowValues, setNewRowValues] = React3.useState({});
+  const [selectedRows, setSelectedRows] = React2.useState(/* @__PURE__ */ new Set());
+  const [newRowValues, setNewRowValues] = React2.useState({});
   const drag = useDragReorder2();
   const anySelected = selectable && selectedRows.size > 0;
   const canToggleCurrency = ufValue != null;
@@ -2723,7 +2721,7 @@ function AssetTable({
       return next;
     });
   };
-  const resolvedColumns = React3.useMemo(() => {
+  const resolvedColumns = React2.useMemo(() => {
     return columns.map((col) => {
       if (col.ufPair && toggledCols.has(col.key)) {
         const pairLabel = col.ufPairLabel || col.label;
@@ -2733,13 +2731,13 @@ function AssetTable({
       return col;
     });
   }, [columns, toggledCols]);
-  const visibleRowIds = React3.useMemo(
+  const visibleRowIds = React2.useMemo(
     () => [...activeRows.map((r) => r.id), ADD_ROW_ID],
     [activeRows]
   );
   const keyboard = useGridKeyboard({ visibleRowIds });
   const labelCol = resolvedColumns.find((c) => c.isLabel) || resolvedColumns[0];
-  const toggleSelect = React3.useCallback((rowId) => {
+  const toggleSelect = React2.useCallback((rowId) => {
     setSelectedRows((prev) => {
       const next = new Set(prev);
       if (next.has(rowId)) next.delete(rowId);
@@ -2747,12 +2745,12 @@ function AssetTable({
       return next;
     });
   }, []);
-  const clearSelection = React3.useCallback(() => setSelectedRows(/* @__PURE__ */ new Set()), []);
-  const requestDeleteSelected = React3.useCallback(() => {
+  const clearSelection = React2.useCallback(() => setSelectedRows(/* @__PURE__ */ new Set()), []);
+  const requestDeleteSelected = React2.useCallback(() => {
     for (const id of selectedRows) requestDelete(id);
     clearSelection();
   }, [selectedRows, requestDelete, clearSelection]);
-  const handleRowClick = React3.useCallback((e, rowId) => {
+  const handleRowClick = React2.useCallback((e, rowId) => {
     if (!(e.metaKey || e.ctrlKey)) return;
     const target = e.target;
     if (target.closest('input, button, [role="button"]')) return;
@@ -2790,7 +2788,7 @@ function AssetTable({
     setNewRowValues({});
     onRowsChange([...rows, row]);
   };
-  const totals = React3.useMemo(() => {
+  const totals = React2.useMemo(() => {
     const result = {};
     for (const col of resolvedColumns) {
       if (col.type === "currency" || col.type === "number") {
@@ -3513,22 +3511,22 @@ var CollapsibleSection = ({
 };
 var collapsiblesection_default = CollapsibleSection;
 function useCollapsedState(keys, initialCollapsed = {}) {
-  const [collapsed, setCollapsed] = React3.useState(() => {
+  const [collapsed, setCollapsed] = React2.useState(() => {
     const state = {};
     for (const k of keys) state[k] = initialCollapsed[k] ?? false;
     return state;
   });
-  const toggle = React3.useCallback((key) => {
+  const toggle = React2.useCallback((key) => {
     setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
-  const expandAll = React3.useCallback(() => {
+  const expandAll = React2.useCallback(() => {
     setCollapsed((prev) => {
       const next = {};
       for (const k of Object.keys(prev)) next[k] = false;
       return next;
     });
   }, []);
-  const collapseAll = React3.useCallback(() => {
+  const collapseAll = React2.useCallback(() => {
     setCollapsed((prev) => {
       const next = {};
       for (const k of Object.keys(prev)) next[k] = true;

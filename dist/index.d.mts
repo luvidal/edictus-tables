@@ -282,7 +282,7 @@ interface AssetTableProps<T extends AssetRow = AssetRow> {
  * Bundles all config for a CrudTable instance.
  * Jogi defines one per table type; CrudTable spreads it as props.
  */
-interface TablePreset<T extends AssetRow = AssetRow> {
+interface TablePreset {
     idPrefix: string;
     addPlaceholder?: string;
     columns: ColumnDef[];
@@ -488,7 +488,7 @@ interface EditableCellProps {
  * within a fixed-height container so clicking to edit does NOT scramble/shift
  * the table layout.
  */
-declare const EditableCell: ({ value, onChange, type, isDeduction, hasData, className, align, placeholder, onViewSource, asDiv, focused, onCellFocus, onNavigate, requestEdit, requestClear, editInitialValue, originClass, keyboard, rowId, cellKey, }: EditableCellProps) => react_jsx_runtime.JSX.Element;
+declare const EditableCell: ({ value, onChange, type, isDeduction, hasData, className, align, onViewSource, asDiv, focused, onCellFocus, onNavigate, requestEdit, requestClear, editInitialValue, originClass, keyboard, rowId, cellKey, }: EditableCellProps) => react_jsx_runtime.JSX.Element;
 
 interface EditableFieldProps {
     /** Current value of the editable field */

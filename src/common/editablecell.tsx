@@ -71,7 +71,6 @@ const EditableCell = ({
     hasData = true,
     className = '',
     align = 'right',
-    placeholder = '',
     onViewSource,
     asDiv = false,
     focused = false,

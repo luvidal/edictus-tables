@@ -10,7 +10,7 @@
 //
 // Color classes resolve against the unified token palette owned by the
 // host (styles/tokens.css). surface-*, ink-*, edge-*, status-* are mapped
-// in @jogi/tables/tailwind.config.ts and the host tailwind.config.ts.
+// in @edictus/tables/tailwind.config.ts and the host tailwind.config.ts.
 
 export const T = {
     // ── Base ──

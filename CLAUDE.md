@@ -1,4 +1,4 @@
-# @jogi/tables
+# @edictus/tables
 
 Financial table components extracted from [jogi](../jogi). Includes RentaTable (default export), CrudTable, BoletasTable, DeclaracionTable, BalanceTable, SummaryTable, ActivosSummary, and FinalResultsCompact.
 
@@ -92,7 +92,7 @@ All user-facing text uses informal **tú**, never **usted**:
 3. **No `@/` imports** — all imports are relative within `src/`
 4. **Icons** — use direct lucide-react imports (`import { Eye } from 'lucide-react'`), not a wrapper component
 5. **Tailwind classes** — the package ships class strings but does NOT bundle CSS. Consumers add the dist path to their `tailwind.config.ts` content array
-6. **API stability** — exported props and named exports must stay backward-compatible with jogi's `@jogi/tables` call sites. Breaking changes require updating the host app in the same handoff
+6. **API stability** — exported props and named exports must stay backward-compatible with jogi's `@edictus/tables` call sites. Breaking changes require updating the host app in the same handoff
 7. **Optimistic updates** — always update UI immediately, then fire callbacks. Don't block UI on async responses
 8. **After modifying a feature**, update this CLAUDE.md if any key behavior changed
 9. **README.md maintenance** — every modification to a component folder must update its `README.md` to reflect changes. Verify that new upgrades don't cause regressions in existing functionality before marking work as complete
@@ -141,7 +141,7 @@ SoftDeletable, TableShellProps, ColorScheme, CellOrigin
 
 ```tsx
 // jogi/app/reports/situacion/tables/vehiculos.ts — declarative config
-import type { ColumnDef, TablePreset } from '@jogi/tables'
+import type { ColumnDef, TablePreset } from '@edictus/tables'
 
 const columns: ColumnDef[] = [
   { key: 'marca', label: 'Marca', type: 'text', width: '30%', isLabel: true },
@@ -155,7 +155,7 @@ export const VEHICULOS: TablePreset = { columns, idPrefix: 'vh', addPlaceholder:
 <CrudTable {...VEHICULOS} rows={rows} onRowsChange={onChange} colorScheme={cs} />
 ```
 
-Domain row types (VehiculoRow, DeudaRow, etc.) live in jogi, not in @jogi/tables.
+Domain row types (VehiculoRow, DeudaRow, etc.) live in jogi, not in @edictus/tables.
 
 ## Inlined Dependencies
 

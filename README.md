@@ -1,5 +1,7 @@
 # @edictus/tables
 
+**English** · [Español](README.es.md)
+
 Financial table components for React and TypeScript, built for credit analysts
 working over Chilean payroll, tax and asset data. Includes editable monthly
 income spreadsheets, fee-receipt and tax-return tables, balance sheets,

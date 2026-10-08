@@ -119,7 +119,7 @@ Gate the `preventDefault()` on "navigation will actually happen" — i.e. only w
 - Read-only cells (totals, recycle bin) — they don't register, so they're skipped automatically.
 - Merging `EditableCell` and `EditableField` — they stay separate.
 - Visual / styling changes.
-- Anything outside `@jogi/tables`.
+- Anything outside `@edictus/tables`.
 - **FinalResults grid traversal** — it's a form layout, native Tab handles it (see §7).
 
 ## Acceptance

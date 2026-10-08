@@ -4,7 +4,7 @@
 
 /* Mirror of host styles/tokens.css so the Vite sandbox at localhost:5173
    renders the same dark palette the host consumer ships. Keep in sync with
-   ~/GitHub/jogi/styles/tokens.css whenever host palette changes. */
+   the host app's styles/tokens.css whenever host palette changes. */
 :root {
     /* Role ramp — sky */
     --theme-50:  240 249 255;

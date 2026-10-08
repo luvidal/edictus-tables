@@ -71,7 +71,7 @@ export interface AssetTableProps<T extends AssetRow = AssetRow> {
 
 /**
  * Bundles all config for a CrudTable instance.
- * Jogi defines one per table type; CrudTable spreads it as props.
+ * The host defines one per table type; CrudTable spreads it as props.
  */
 export interface TablePreset {
     idPrefix: string

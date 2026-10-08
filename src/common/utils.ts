@@ -1,4 +1,4 @@
-// Currency formatting — inlined from jogi's lib/reports/utils.ts
+// Currency formatting — inlined from the host's lib/reports/utils.ts
 
 export const generateId = (prefix: string) =>
     `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`

@@ -1,4 +1,4 @@
-// Mobile detection hook — inlined from jogi's context/device.ts
+// Mobile detection hook — inlined from the host's context/device.ts
 
 import { useState, useEffect } from 'react'
 

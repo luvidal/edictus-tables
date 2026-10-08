@@ -280,7 +280,7 @@ interface AssetTableProps<T extends AssetRow = AssetRow> {
 }
 /**
  * Bundles all config for a CrudTable instance.
- * Jogi defines one per table type; CrudTable spreads it as props.
+ * The host defines one per table type; CrudTable spreads it as props.
  */
 interface TablePreset {
     idPrefix: string;
@@ -456,7 +456,7 @@ interface EditableCellProps {
     /**
      * @deprecated Pass `keyboard`/`rowId`/`cellKey` instead — the registry path
      * derives focus from the `useGridKeyboard` hook. Slated for removal in the
-     * next major. Zero call sites in jogi/main as of 2026-05-25.
+     * next major. Zero call sites in the host's main branch as of 2026-05-25.
      */
     focused?: boolean;
     /** @deprecated See `focused`. Use registry-path keyboard binding. */

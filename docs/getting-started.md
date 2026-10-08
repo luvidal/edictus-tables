@@ -47,26 +47,26 @@ dist/          → Built output (gitignored, created by npm run build)
 docs/          → Documentation
 ```
 
-## How to Link to jogi (Consumer)
+## How to Link to the host app (Consumer)
 
-This package is consumed by [jogi](../jogi) via a `file:` dependency:
+This package is consumed by the host app via a `file:` dependency:
 
 ```bash
-# In jogi's package.json:
+# In the host's package.json:
 "@avd/monthlyreports": "file:../monthlyreports"
 
 # After changing monthlyreports source:
 cd ../monthlyreports && npm run build
-cd ../jogi && npm install   # picks up rebuilt dist/
+cd ../<host-app> && npm install   # picks up rebuilt dist/
 ```
 
-jogi re-exports the component from `lib/reports/monthlytable.tsx`:
+The host re-exports the component from `lib/reports/monthlytable.tsx`:
 ```ts
 export { default } from '@avd/monthlyreports'
 export type { Month, RowData, RowType, MonthlyTableProps } from '@avd/monthlyreports'
 ```
 
-jogi's `tailwind.config.ts` includes the dist path for class scanning:
+The host's `tailwind.config.ts` includes the dist path for class scanning:
 ```
 './node_modules/@avd/monthlyreports/dist/**/*.{js,mjs}'
 ```
@@ -76,8 +76,8 @@ jogi's `tailwind.config.ts` includes the dist path for class scanning:
 1. **Edit source** in `src/`
 2. **Run `npm run preview`** to see changes visually (Vite imports `src/` directly, no build needed)
 3. **Run `npm test`** to verify logic
-4. **Run `npm run build`** when ready to update jogi
-5. **In jogi:** `npm install` to pick up the rebuilt package, then `npm run build` to verify integration
+4. **Run `npm run build`** when ready to update the host app
+5. **In the host app:** `npm install` to pick up the rebuilt package, then `npm run build` to verify integration
 
 ## Adding Tests
 
@@ -110,7 +110,7 @@ Then add it to the `App` component's render output.
 1. **Read `CLAUDE.md` first** — it has the code rules, behavior docs, and Spanish copy standard
 2. **No `@/` imports** — all imports within `src/` are relative
 3. **Icons** — use direct lucide-react imports, not a wrapper
-4. **API stability** — don't break `MonthlyTableProps` without coordinating with jogi
+4. **API stability** — don't break `MonthlyTableProps` without coordinating with the host app
 5. **Spanish copy** — all user-facing strings use tú (informal), never usted
 6. **Run `npm test` after changes** — 44 tests must pass
 7. **Run `npm run build` before committing** — ensures the package compiles

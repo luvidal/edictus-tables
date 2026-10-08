@@ -1,4 +1,4 @@
-// EditableCell — inlined from jogi's components/forms/editablecell.tsx
+// EditableCell — inlined from the host's components/forms/editablecell.tsx
 // Replaced @/ imports with local package imports
 
 import { useState, useRef, useEffect, useLayoutEffect } from 'react'
@@ -30,7 +30,7 @@ interface EditableCellProps {
     /**
      * @deprecated Pass `keyboard`/`rowId`/`cellKey` instead — the registry path
      * derives focus from the `useGridKeyboard` hook. Slated for removal in the
-     * next major. Zero call sites in jogi/main as of 2026-05-25.
+     * next major. Zero call sites in the host's main branch as of 2026-05-25.
      */
     focused?: boolean
     /** @deprecated See `focused`. Use registry-path keyboard binding. */

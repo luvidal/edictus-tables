@@ -139,7 +139,7 @@ function CrudScenario() {
 function App() {
     return (
         <div className="max-w-5xl mx-auto px-4 py-8 text-ink-primary">
-            <h1 className="text-xl font-bold mb-2">@jogi/tables preview</h1>
+            <h1 className="text-xl font-bold mb-2">@edictus/tables preview</h1>
             <p className="text-sm text-ink-tertiary mb-8">
                 Current package surfaces rendered with local fixtures.
             </p>

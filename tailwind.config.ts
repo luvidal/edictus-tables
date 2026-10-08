@@ -55,7 +55,7 @@ const config: Config = {
                     contrast: withAlpha('--brand-contrast'),
                     glow:     withAlpha('--brand-glow'),
                 },
-                // Semantic status tokens — same mapping as @jogi/ui.
+                // Semantic status tokens — same mapping as @edictus/ui.
                 status: {
                     ok:                 withAlpha('--status-ok'),
                     'ok-muted':         withAlpha('--status-ok-muted'),

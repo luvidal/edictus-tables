@@ -154,4 +154,4 @@ export type { AssetRowData, AssetTableProps } from './assets'
 1. `npm run build` — must succeed with identical exports
 2. `npm test` — both test files pass
 3. `npm run preview` — visual test page renders correctly
-4. Consumer (jogi) imports from `@avd/financetables` — unchanged public API
+4. Consumer (host app) imports from `@avd/financetables` — unchanged public API
